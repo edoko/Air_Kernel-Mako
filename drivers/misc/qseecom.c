@@ -2514,6 +2514,7 @@ static int __devinit qseecom_init(void)
 static void __devexit qseecom_exit(void)
 {
 
+
 	__qseecom_disable_clk();
 
 	device_destroy(driver_class, qseecom_device_no);
