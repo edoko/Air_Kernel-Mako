@@ -16,6 +16,17 @@
  *
  */
 
+/*
+ * Generic auto hotplug driver for ARM SoCs. Targeted at current generation
+ * SoCs with dual and quad core applications processors.
+ * Automatically hotplugs online and offline CPUs based on system load.
+ * It is also capable of immediately onlining a core based on an external
+ * event.
+ *
+ * Not recommended for use with OMAP4460 due to the potential for lockups
+ * whilst hotplugging.
+ */
+
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/module.h>
@@ -40,8 +51,8 @@
 
 #define CPUS_AVAILABLE		num_possible_cpus()
 #define MIN_ONLINE_CPUS		1 /* Number of online CPUs whilst screen on */
-#define SAMPLING_PERIODS	20 /* Load average for 200ms at MIN_SAMPLING_RATE */
-#define MIN_SAMPLING_RATE	msecs_to_jiffies(10)
+#define SAMPLING_PERIODS	25 /* Load average for 500ms at MIN_SAMPLING_RATE */
+#define MIN_SAMPLING_RATE	msecs_to_jiffies(20)
 #define INDEX_MAX_VALUE		(SAMPLING_PERIODS - 1)
 #define ENABLE_LOAD_THRESHOLD	(100 * CPUS_AVAILABLE) /* When load spikes high, enable all CPUs */
 #define DISABLE_LOAD_THRESHOLD	55 /* When CPU load is 0.55 disable additional CPUs */
@@ -51,6 +62,7 @@ u8 flags;
 #define HOTPLUG_DISABLED	(1 << 0) /* FIXME: Needs implementing */
 #define BOOSTPULSE_ACTIVE	(1 << 1)
 #define BOOSTPULSE_ONESHOT	(1 << 2)
+#define EARLYSUSPEND_ACTIVE	(1 << 3)
 
 struct delayed_work hotplug_decision_work;
 struct delayed_work hotplug_online_all_work;
@@ -255,8 +267,15 @@ static void hotplug_offline_work_fn(struct work_struct *work)
 	schedule_delayed_work_on(0, &hotplug_decision_work, MIN_SAMPLING_RATE);
 }
 
+/*
+ * TODO: Use sysfs interface instead of external call to achieve this.
+ * Then we can be invoked directly from PowerHAL instead of via CPUfreq.
+ */
 void hotplug_boostpulse(bool flag, bool oneshot)
 {
+	if (unlikely(flags & EARLYSUSPEND_ACTIVE))
+		return;
+
 	mutex_lock(&boostpulse_lock);
 	if (unlikely(oneshot)) {
 		if (!(flags & BOOSTPULSE_ONESHOT)) {
@@ -269,7 +288,14 @@ void hotplug_boostpulse(bool flag, bool oneshot)
 		if (!(flags & BOOSTPULSE_ACTIVE)) {
 			flags |= BOOSTPULSE_ACTIVE;
 			pr_info("auto_hotplug: |= BOOSTPULSE_ACTIVE\n");
-			if (likely(num_online_cpus() < (num_possible_cpus() / 2))) {
+			/*
+			 * If there are less than 2 CPUs online, then online
+			 * an additional CPU, otherwise check for any pending
+			 * offlines, cancel them and delay the next sample by
+			 * 2 seconds. Either way, we don't cause any offlines
+			 * whilst the user is interacting with the device.
+			 */
+			if (likely(num_online_cpus() < 2)) {
 				cancel_delayed_work_sync(&hotplug_offline_work);
 				cancel_delayed_work_sync(&hotplug_decision_work);
 				schedule_work_on(0, &hotplug_boost_online_work);
@@ -279,7 +305,7 @@ void hotplug_boostpulse(bool flag, bool oneshot)
 					pr_info("auto_hotplug: %s: Cancelling hotplug_offline_work\n", __func__);
 					cancel_delayed_work_sync(&hotplug_offline_work);
 					cancel_delayed_work_sync(&hotplug_decision_work);
-					schedule_delayed_work_on(0, &hotplug_decision_work, HZ);
+					schedule_delayed_work_on(0, &hotplug_decision_work, 2 * HZ);
 				}
 			}
 		}
@@ -294,6 +320,7 @@ void hotplug_boostpulse(bool flag, bool oneshot)
 static void auto_hotplug_early_suspend(struct early_suspend *handler)
 {
 	pr_info("auto_hotplug: early suspend handler\n");
+	flags |= EARLYSUSPEND_ACTIVE;
 
 	/* Cancel all scheduled delayed work to avoid races */
 	cancel_delayed_work_sync(&hotplug_offline_work);
@@ -307,6 +334,7 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 static void auto_hotplug_late_resume(struct early_suspend *handler)
 {
 	pr_info("auto_hotplug: late resume handler\n");
+	flags &= ~EARLYSUSPEND_ACTIVE;
 
 	schedule_delayed_work_on(0, &hotplug_decision_work, HZ);
 }
@@ -319,7 +347,7 @@ static struct early_suspend auto_hotplug_suspend = {
 
 static int __init auto_hotplug_init(void)
 {
-	pr_info("auto_hotplug: v0.200 by _thalamus init()\n");
+	pr_info("auto_hotplug: v0.201 by _thalamus init()\n");
 	pr_info("auto_hotplug: %d CPUs detected\n", CPUS_AVAILABLE);
 	INIT_DELAYED_WORK(&hotplug_decision_work, hotplug_decision_work_fn);
 	INIT_DELAYED_WORK(&hotplug_online_all_work, hotplug_online_all_work_fn);
@@ -327,6 +355,12 @@ static int __init auto_hotplug_init(void)
 	INIT_DELAYED_WORK_DEFERRABLE(&hotplug_offline_work, hotplug_offline_work_fn);
 	INIT_WORK(&hotplug_boost_online_work, hotplug_boost_online_work_fn);
 
+	/*
+	 * FIXME: Not ideal, boostpulse can override this plus it would be better
+	 * to start sampling earlier then flick a switch to enable the actual hotplug
+	 * actions. Currently, as soon as this fires, we offline all the secondary cores
+	 * because all our samples are 0 which is a very bad thing.
+	 */
 	/*
 	 * Give the system time to boot before fiddling with hotplugging.
 	 */
