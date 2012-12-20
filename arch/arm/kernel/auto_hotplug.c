@@ -69,8 +69,8 @@
  * These two are scaled based on num_online_cpus()
  */
 #define ENABLE_ALL_LOAD_THRESHOLD	(125 * CPUS_AVAILABLE)
-#define ENABLE_LOAD_THRESHOLD		225
-#define DISABLE_LOAD_THRESHOLD		60
+#define ENABLE_LOAD_THRESHOLD		250
+#define DISABLE_LOAD_THRESHOLD		125
 
 /* Control flags */
 unsigned char flags;
@@ -184,10 +184,17 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 		} else if (avg_running <= disable_load) {
 			/* Only queue a cpu_down() if there isn't one already pending */
 			if (!(delayed_work_pending(&hotplug_offline_work))) {
+				if (online_cpus == 2 && avg_running < (disable_load/2)) {
 #if DEBUG
-				pr_info("auto_hotplug: Offlining CPU, avg running: %d\n", avg_running);
+					pr_info("auto_hotplug: Online CPUs = 2; Offlining CPU in 3 seconds, avg running: %d\n", avg_running);
 #endif
-				schedule_delayed_work_on(0, &hotplug_offline_work, HZ);
+					schedule_delayed_work_on(0, &hotplug_offline_work, HZ * 2);
+				} else if (online_cpus > 2) {
+#if DEBUG
+					pr_info("auto_hotplug: Offlining CPU, avg running: %d\n", avg_running);
+#endif
+					schedule_delayed_work_on(0, &hotplug_offline_work, HZ);
+				}
 			}
 			/* If boostpulse is active, clear the flags */
 			if (flags & BOOSTPULSE_ACTIVE) {
@@ -361,6 +368,7 @@ static void auto_hotplug_late_resume(struct early_suspend *handler)
 #endif
 	flags &= ~EARLYSUSPEND_ACTIVE;
 
+	schedule_work(&hotplug_online_single_work);
 	schedule_delayed_work_on(0, &hotplug_decision_work, HZ);
 }
 
