@@ -1,7 +1,11 @@
 /* arch/arm/mach-msm/pm.h
  *
  * Copyright (C) 2007 Google, Inc.
+<<<<<<< HEAD
  * Copyright (c) 2009-2012, Code Aurora Forum. All rights reserved.
+=======
+ * Copyright (c) 2009-2013, The Linux Foundation. All rights reserved.
+>>>>>>> 1b8601b... msm: pm: Add API to enable/disable retention mode
  * Author: San Mehat <san@android.com>
  *
  * This software is licensed under the terms of the GNU General Public
@@ -86,6 +90,11 @@ int msm_pm_idle_prepare(struct cpuidle_device *dev,
 void msm_pm_set_irq_extns(struct msm_pm_irq_calls *irq_calls);
 int msm_pm_idle_enter(enum msm_pm_sleep_mode sleep_mode);
 void msm_pm_cpu_enter_lowpower(unsigned int cpu);
+<<<<<<< HEAD
+=======
+void __init msm_pm_set_tz_retention_flag(unsigned int flag);
+void msm_pm_enable_retention(bool enable);
+>>>>>>> 1b8601b... msm: pm: Add API to enable/disable retention mode
 
 #ifdef CONFIG_MSM_PM8X60
 void msm_pm_set_rpm_wakeup_irq(unsigned int irq);
