@@ -93,12 +93,36 @@ static unsigned int debug = 0; // default: false
 static unsigned int enable_load_threshold = ENABLE_LOAD_THRESHOLD;
 static unsigned int disable_load_threshold = DISABLE_LOAD_THRESHOLD;
 static unsigned int min_sampling_rate = MIN_SAMPLING_RATE;
+static unsigned int min_online_cpus = 1;
 
 module_param(debug, int, 0775);
 module_param(enable_load_threshold, int, 0775);
 module_param(disable_load_threshold, int, 0775);
 module_param(min_sampling_rate, int, 0775);
 
+static int min_online_cpus_fn_set(const char *arg, const struct kernel_param *kp)
+{
+    int ret; 
+    
+    ret = param_set_int(arg, kp);
+    
+    ///at least 1 core must run even if set value is out of range
+    if ((min_online_cpus < 1) || (min_online_cpus > CPUS_AVAILABLE))
+        min_online_cpus = 1;
+    
+    //online all cores and offline them based on set value
+    schedule_work(&hotplug_online_all_work);
+        
+    return ret;
+}
+
+static struct kernel_param_ops min_online_cpus_ops = {
+    .set = min_online_cpus_fn_set,
+    .get = param_get_uint,
+};
+
+module_param_cb(min_online_cpus, &min_online_cpus_ops, &min_online_cpus, 0775);
+MODULE_PARM_DESC(min_online_cpus, "auto_hotplug min_online_cpus (1-#CPUs)");
 
 static void hotplug_decision_work_fn(struct work_struct *work)
 {
@@ -191,7 +215,7 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 				cancel_delayed_work(&hotplug_offline_work);
 			schedule_work(&hotplug_online_single_work);
 			return;
-		} else if (avg_running <= disable_load) {
+		} else if ((avg_running <= disable_load) && (min_online_cpus < online_cpus)) {
 			/* Only queue a cpu_down() if there isn't one already pending */
 			if (!(delayed_work_pending(&hotplug_offline_work))) {
 				if (online_cpus == 2 && avg_running < (disable_load/2)) {
