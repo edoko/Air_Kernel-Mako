@@ -108,7 +108,7 @@ struct leaf {
 	struct rcu_head rcu;
 };
 
-struct leaf_info {
+struct leaf_info { 
 	struct hlist_node hlist;
 	int plen;
 	u32 mask_plen; /* ntohl(inet_make_mask(plen)) */
