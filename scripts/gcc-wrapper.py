@@ -54,6 +54,7 @@ allowed_warnings = set([
 #    "inet_hashtables.h:359",
     "cpufreq_intellidemand.c:93",
     "mipi_lgit.c:177",
+    "mipi_lgit.c:589",
  ])
 
 # Capture the name of the object file, can find it.
