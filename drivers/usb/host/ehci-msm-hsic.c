@@ -1041,6 +1041,97 @@ static int ehci_hsic_reset(struct usb_hcd *hcd)
 
 #ifdef CONFIG_PM
 
+#define RESET_RETRY_LIMIT 3
+#define RESET_SIGNAL_TIME_SOF_USEC (50 * 1000)
+#define RESET_SIGNAL_TIME_USEC (20 * 1000)
+static void ehci_hsic_reset_sof_bug_handler(struct usb_hcd *hcd, u32 val)
+{
+	struct ehci_hcd	*ehci = hcd_to_ehci(hcd);
+	struct msm_hsic_hcd *mehci = hcd_to_hsic(hcd);
+	struct msm_hsic_host_platform_data *pdata = mehci->dev->platform_data;
+	u32 __iomem *status_reg = &ehci->regs->port_status[0];
+	u32 cmd;
+	unsigned long flags;
+	int retries = 0, ret, cnt = RESET_SIGNAL_TIME_USEC;
+
+	if (pdata && pdata->swfi_latency)
+		pm_qos_update_request(&mehci->pm_qos_req_dma,
+			pdata->swfi_latency + 1);
+
+	mehci->bus_reset = 1;
+
+	/* Halt the controller */
+	cmd = ehci_readl(ehci, &ehci->regs->command);
+	cmd &= ~CMD_RUN;
+	ehci_writel(ehci, cmd, &ehci->regs->command);
+	ret = handshake(ehci, &ehci->regs->status, STS_HALT,
+			STS_HALT, 16 * 125);
+	if (ret) {
+		pr_err("halt handshake fatal error\n");
+		dbg_log_event(NULL, "HALT: fatal", 0);
+		goto fail;
+	}
+
+retry:
+	retries++;
+	dbg_log_event(NULL, "RESET: start", retries);
+	pr_debug("reset begin %d\n", retries);
+	mehci->reset_again = 0;
+	spin_lock_irqsave(&ehci->lock, flags);
+	ehci_writel(ehci, val, status_reg);
+	ehci_writel(ehci, GPT_LD(RESET_SIGNAL_TIME_USEC - 1),
+					&mehci->timer->gptimer0_ld);
+	ehci_writel(ehci, GPT_RESET | GPT_RUN,
+			&mehci->timer->gptimer0_ctrl);
+	ehci_writel(ehci, INTR_MASK | STS_GPTIMER0_INTERRUPT,
+			&ehci->regs->intr_enable);
+
+	ehci_writel(ehci, GPT_LD(RESET_SIGNAL_TIME_SOF_USEC - 1),
+			&mehci->timer->gptimer1_ld);
+	ehci_writel(ehci, GPT_RESET | GPT_RUN,
+		&mehci->timer->gptimer1_ctrl);
+
+	spin_unlock_irqrestore(&ehci->lock, flags);
+	wait_for_completion(&mehci->gpt0_completion);
+
+	if (!mehci->reset_again)
+		goto done;
+
+	if (handshake(ehci, status_reg, PORT_RESET, 0, 10 * 1000)) {
+		pr_err("reset handshake fatal error\n");
+		dbg_log_event(NULL, "RESET: fatal", retries);
+		goto fail;
+	}
+
+	if (retries < RESET_RETRY_LIMIT)
+		goto retry;
+
+	/* complete reset in tight loop */
+	pr_info("RESET in tight loop\n");
+	dbg_log_event(NULL, "RESET: tight", 0);
+
+	spin_lock_irqsave(&ehci->lock, flags);
+	ehci_writel(ehci, val, status_reg);
+	while (cnt--)
+		udelay(1);
+	ret = msm_hsic_reset_done(hcd);
+	spin_unlock_irqrestore(&ehci->lock, flags);
+	if (ret) {
+		pr_err("RESET in tight loop failed\n");
+		dbg_log_event(NULL, "RESET: tight failed", 0);
+		goto fail;
+	}
+
+done:
+	dbg_log_event(NULL, "RESET: done", retries);
+	pr_debug("reset completed\n");
+fail:
+	mehci->bus_reset = 0;
+	if (pdata && pdata->swfi_latency)
+		pm_qos_update_request(&mehci->pm_qos_req_dma,
+			PM_QOS_DEFAULT_VALUE);
+}
+
 static int ehci_hsic_bus_suspend(struct usb_hcd *hcd)
 {
 	struct msm_hsic_hcd *mehci = hcd_to_hsic(hcd);
