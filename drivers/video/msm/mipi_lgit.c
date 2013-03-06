@@ -231,33 +231,43 @@ struct syscore_ops panel_syscore_ops = {
 };
 
 #ifdef CONFIG_GAMMA_CONTROL
-void update_vals(int array_pos)
+
+#define RED 1
+#define GREEN 2
+#define BLUE 3
+#define CONTRAST 5
+#define BRIGHTNESS 6
+#define SATURATION 7
+
+void update_vals(int type, int array_pos, int val)
 {
-	int val = 0;
 	int ret = 0;
 	int i;
 
-	switch(array_pos) {
-		case 1:
-			val = get_greys();
+	switch(type) {
+		case RED:
+			new_color_vals[5].payload[array_pos] = val;
+			new_color_vals[6].payload[array_pos] = val;
 			break;
-		case 2:
-			val = get_mids();
+		case GREEN:
+			new_color_vals[7].payload[array_pos] = val;
+			new_color_vals[8].payload[array_pos] = val;
 			break;
-		case 3:
-			val = get_blacks();
+		case BLUE:
+			new_color_vals[9].payload[array_pos] = val;
+			new_color_vals[9].payload[array_pos] = val;
 			break;
-		case 5:
-			val = get_contrast();
+		case CONTRAST:
+			for (i = 5; i <= 10; i++)
+				new_color_vals[i].payload[type] = val;
 			break;
-		case 6:
-			val = get_brightness();
+		case BRIGHTNESS:
+			for (i = 5; i <= 10; i++)
+				new_color_vals[i].payload[type] = val;
 			break;
-		case 7:
-			val = get_saturation();
-			break;
-		case 8:
-			val = get_whites();
+		case SATURATION:
+			for (i = 5; i <= 10; i++)
+				new_color_vals[i].payload[type] = val;
 			break;
 		default:
 			pr_info("%s - Wrong value - abort.\n", __FUNCTION__);
