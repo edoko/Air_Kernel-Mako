@@ -81,8 +81,6 @@ GRTAGS
 GSYMS
 GTAGS
 
-/mkboot
-
 *.orig
 *~
 \#*#

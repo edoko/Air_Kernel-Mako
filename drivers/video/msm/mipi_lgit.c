@@ -34,7 +34,6 @@ static int skip_init;
 #ifdef CONFIG_GAMMA_CONTROL
 static DEFINE_MUTEX(color_lock);
 struct dsi_cmd_desc new_color_vals[33];
-<<<<<<< HEAD
 int get_whites(void);
 int get_mids(void);
 int get_blacks(void);
@@ -42,8 +41,6 @@ int get_contrast(void);
 int get_brightness(void);
 int get_saturation(void);
 int get_greys(void);
-=======
->>>>>>> 2d4b4cf... Gamma Control: separate whites, grays, mids and blacks by RED, GREEN and BLUE settings. Contrast, Brightness and Saturation are common to the RGB spectrum as it makes no sense to have separates for this options. TODO: add a function to reset all the gamma stats to default.
 #endif
 
 #define DSV_ONBST 57
@@ -92,13 +89,8 @@ static int mipi_lgit_lcd_on(struct platform_device *pdev)
 
 	MIPI_OUTP(MIPI_DSI_BASE + 0x38, 0x10000000);
 	ret = mipi_dsi_cmds_tx(&lgit_tx_buf,
-<<<<<<< HEAD
 #ifdef CONFIG_GAMMA_CONTROL
 			new_color_vals,
-=======
-		new_color_vals,
-		mipi_lgit_pdata->power_on_set_size_1);
->>>>>>> 2d4b4cf... Gamma Control: separate whites, grays, mids and blacks by RED, GREEN and BLUE settings. Contrast, Brightness and Saturation are common to the RGB spectrum as it makes no sense to have separates for this options. TODO: add a function to reset all the gamma stats to default.
 #else
 			mipi_lgit_pdata->power_on_set_1,
 #endif
@@ -239,54 +231,41 @@ struct syscore_ops panel_syscore_ops = {
 };
 
 #ifdef CONFIG_GAMMA_CONTROL
-
-#define RED 1
-#define GREEN 2
-#define BLUE 3
-#define CONTRAST 5
-#define BRIGHTNESS 6
-#define SATURATION 7
-
-void update_vals(int type, int array_pos, int val)
+void update_vals(int array_pos)
 {
+	int val = 0;
 	int ret = 0;
 	int i;
 
-	switch(type) {
-		case RED:
-			new_color_vals[5].payload[array_pos] = val;
-			new_color_vals[6].payload[array_pos] = val;
+	switch(array_pos) {
+		case 1:
+			val = get_greys();
 			break;
-		case GREEN:
-			new_color_vals[7].payload[array_pos] = val;
-			new_color_vals[8].payload[array_pos] = val;
+		case 2:
+			val = get_mids();
 			break;
-		case BLUE:
-			new_color_vals[9].payload[array_pos] = val;
-			new_color_vals[9].payload[array_pos] = val;
+		case 3:
+			val = get_blacks();
 			break;
-		case CONTRAST:
-			for (i = 5; i <= 10; i++)
-				new_color_vals[i].payload[type] = val;
+		case 5:
+			val = get_contrast();
 			break;
-		case BRIGHTNESS:
-			for (i = 5; i <= 10; i++)
-				new_color_vals[i].payload[type] = val;
+		case 6:
+			val = get_brightness();
 			break;
-		case SATURATION:
-			for (i = 5; i <= 10; i++)
-				new_color_vals[i].payload[type] = val;
+		case 7:
+			val = get_saturation();
+			break;
+		case 8:
+			val = get_whites();
 			break;
 		default:
 			pr_info("%s - Wrong value - abort.\n", __FUNCTION__);
 			return;
 	}
-<<<<<<< HEAD
 	
 	for (i = 5; i <= 10; i++)
 		new_color_vals[i].payload[array_pos] = val;
-=======
->>>>>>> 2d4b4cf... Gamma Control: separate whites, grays, mids and blacks by RED, GREEN and BLUE settings. Contrast, Brightness and Saturation are common to the RGB spectrum as it makes no sense to have separates for this options. TODO: add a function to reset all the gamma stats to default.
 
 	pr_info("%s - Updating display GAMMA settings.\n", __FUNCTION__);
 	
