@@ -95,20 +95,19 @@ static const struct row_queue_params row_queues_def[] = {
 	{false, 1, false}	/* ROWQ_PRIO_LOW_SWRITE */
 };
 
-/* Default values for idling on read queues */
-#define ROW_IDLE_TIME 50	/* 5 msec */
-#define ROW_READ_FREQ 70	/* 7 msec */
+/* Default values for idling on read queues (in msec) */
+#define ROW_IDLE_TIME_MSEC 5
+#define ROW_READ_FREQ_MSEC 20
 
 /**
  * struct rowq_idling_data -  parameters for idling on the queue
- * @idle_trigger_time:	time (in jiffies). If a new request was
- *			inserted before this time value, idling
- *			will be enabled.
+ * @last_insert_time:	time the last request was inserted
+ *			to the queue
  * @begin_idling:	flag indicating wether we should idle
  *
  */
 struct rowq_idling_data {
-	unsigned long		idle_trigger_time;
+	ktime_t			last_insert_time;
 	bool			begin_idling;
 };
 
@@ -294,14 +293,13 @@ static void row_add_request(struct request_queue *q,
 		if (diff_ms < rd->rd_idle_data.freq_ms) {
 			rqueue->idle_data.begin_idling = true;
 			row_log_rowq(rd, rqueue->prio, "Enable idling");
-		} else
+		} else {
 			rqueue->idle_data.begin_idling = false;
 			row_log_rowq(rd, rqueue->prio, "Disable idling (%ldms)",
 				(long)diff_ms);
 		}
 
-		rqueue->idle_data.idle_trigger_time =
-			jiffies + msecs_to_jiffies(rd->read_idle.freq);
+		rqueue->idle_data.last_insert_time = ktime_get();
 	}
 	if (row_queues_def[rqueue->prio].is_urgent &&
 	    row_rowq_unserved(rd, rqueue->prio)) {
@@ -365,7 +363,6 @@ static void row_completed_req(struct request_queue *q, struct request *rq)
  * row_urgent_pending() - Return TRUE if there is an urgent
  *			  request on scheduler
  * @q:	requests queue
- *
  */
 static bool row_urgent_pending(struct request_queue *q)
 {
@@ -930,3 +927,4 @@ module_exit(row_exit);
 
 MODULE_LICENSE("GPLv2");
 MODULE_DESCRIPTION("Read Over Write IO scheduler");
+
