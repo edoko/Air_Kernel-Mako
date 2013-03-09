@@ -361,7 +361,6 @@ static DEVICE_ATTR(kgamma_b, 0644, kgamma_b_show, kgamma_b_store);
 static DEVICE_ATTR(kgamma_ctrl, 0644, kgamma_ctrl_show, kgamma_ctrl_store);
 
 /******************* end sysfs interface *******************/
->>>>>>> 8dabc45... gamma control: WIP expose gamma parameters to sysfs interface
 
 static int mipi_lgit_lcd_probe(struct platform_device *pdev)
 {
