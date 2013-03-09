@@ -280,6 +280,12 @@ int kcal_set_values(int kcal_r, int kcal_g, int kcal_b)
 	return 0;
 }
 
+/* motley - keep color alive after screen off/on */
+int kcal_keep_color_alive(void)
+{
+	return update_preset_lcdc_lut();
+}
+
 static int kcal_get_values(int *kcal_r, int *kcal_g, int *kcal_b)
 {
 	*kcal_r = kcal_value.red;
@@ -288,7 +294,7 @@ static int kcal_get_values(int *kcal_r, int *kcal_g, int *kcal_b)
 	return 0;
 }
 
-static int kcal_refresh_values(void)
+inline int kcal_refresh_values(void)
 {
 	return update_preset_lcdc_lut();
 }
