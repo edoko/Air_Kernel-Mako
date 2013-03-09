@@ -52,8 +52,8 @@ allowed_warnings = set([
     "swab.h:49",
     "inet_hashtables.h:356",
     "inet_hashtables.h:359",
-    "cpufreq_intellidemand.c:2090",
-    "cpufreq_intellidemand.c:2089",
+    "cpufreq_intellidemand.c:2091",
+    "cpufreq_intellidemand.c:2092",
  ])
 
 # Capture the name of the object file, can find it.
