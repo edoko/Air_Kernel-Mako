@@ -375,7 +375,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-delete-null-pointer-checks \
 		   -fmodulo-sched -fmodulo-sched-allow-regmoves \
 		   -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
-		   -mcpu=cortex-a15 -mfpu=neon -pipe
+		   -mcpu=cortex-a15 -mfpu=neon \
+		   -mno-unaligned-access -pipe
 
 KBUILD_AFLAGS_KERNEL := -mcpu=cortex-a15 -mfpu=neon -pipe
 KBUILD_CFLAGS_KERNEL := -mcpu=cortex-a15 -mfpu=neon -pipe
