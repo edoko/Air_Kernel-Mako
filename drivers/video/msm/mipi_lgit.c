@@ -564,6 +564,10 @@ static DEVICE_ATTR(kgamma_blue, 0644, kgamma_blue_show, kgamma_blue_store);
 
 /******************* end motley sysfs interface ********************/
 
+struct syscore_ops panel_syscore_ops = {
+	.shutdown = mipi_lgit_lcd_shutdown,
+};
+
 static int mipi_lgit_lcd_probe(struct platform_device *pdev)
 {
 	int rc;
@@ -582,8 +586,6 @@ static int mipi_lgit_lcd_probe(struct platform_device *pdev)
 	skip_init = true;
 	msm_fb_add_device(pdev);
 
-	register_syscore_ops(&panel_syscore_ops);
-	
 	/* faux123 gamma control */
 	rc = device_create_file(&pdev->dev, &dev_attr_kgamma_r);
 	if(rc !=0)
