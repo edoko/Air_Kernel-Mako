@@ -193,7 +193,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
-CROSS_COMPILE	?= /home/edoko/arm-eabi-4.6/bin/arm-eabi-
+CROSS_COMPILE	?= /home/edoko/gcc-linaro-4.7.3-20130221/bin/arm-linux-gnueabihf-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -375,7 +375,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-delete-null-pointer-checks \
 		   -fmodulo-sched -fmodulo-sched-allow-regmoves \
 		   -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
-		   -mcpu=cortex-a15 -mfpu=neon -pipe
+		   -mcpu=cortex-a15 -mfpu=neon \
+		   -mno-unaligned-access -pipe
 
 KBUILD_AFLAGS_KERNEL := -mcpu=cortex-a15 -mfpu=neon -pipe
 KBUILD_CFLAGS_KERNEL := -mcpu=cortex-a15 -mfpu=neon -pipe

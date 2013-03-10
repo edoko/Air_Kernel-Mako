@@ -1577,7 +1577,7 @@ endif # CPU_FREQ_MSM
 
 config MSM_CPUFREQ_LIMITER
 	tristate "MSM CPU frequency limiter"
-	default n
+	default m
 	help
 	  This driver limits MSM CPU frequency through sysfs file system.
 
@@ -1586,11 +1586,11 @@ config MSM_CPUFREQ_LIMITER
 
 	  If in doubt, say N.
 
-config CPU_VOLTAGE_TABLE
-	bool "Enable CPU Voltage Table via sysfs for adjustements"
+config USERSPACE_VOLTAGE_CONTROL
+	bool "Enable Userspace CPU Voltage Control"
 	default y
 	help
-	  Krait User Votlage Control
+	  Userspace Voltage Control
 
 config MSM_CPU_AVS
 	bool "Enable software controlled Adaptive Voltage Scaling (AVS)"
