@@ -351,11 +351,11 @@ CC		= $(srctree)/scripts/gcc-wrapper.py $(REAL_CC)
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   = -fno-pic -pipe
+CFLAGS_MODULE   = -fno-pic -mcpu=cortex-a15 -mfpu=neon -pipe
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
 CFLAGS_KERNEL	= -mcpu=cortex-a15 -mfpu=neon -pipe
-AFLAGS_KERNEL	= -mcpu=cortex-a15 -mfpu=neon -pipe
+AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -373,13 +373,9 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -fmodulo-sched -fmodulo-sched-allow-regmoves \
-		   -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
-		   -mcpu=cortex-a15 -mfpu=neon \
-		   -mno-unaligned-access -pipe
-
-KBUILD_AFLAGS_KERNEL := -mcpu=cortex-a15 -mfpu=neon -pipe
-KBUILD_CFLAGS_KERNEL := -mcpu=cortex-a15 -mfpu=neon -pipe
+		   -mcpu=cortex-a15 -mfpu=neon -pipe
+KBUILD_AFLAGS_KERNEL :=
+KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
