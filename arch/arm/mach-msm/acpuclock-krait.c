@@ -836,13 +836,8 @@ static void __init bus_init(const struct l2_level *l2_level)
 
 #ifdef CONFIG_USERSPACE_VOLTAGE_CONTROL
 
-<<<<<<< HEAD
 #define MAX_VDD 1300
 #define MIN_VDD 700
-=======
-#define HFPLL_MIN_VDD		 600000
-#define HFPLL_MAX_VDD		1300000
->>>>>>> 116b76f3... Userspace Voltage Control: tweaked faux's original work
 
 int get_num_freqs(void)
 {
@@ -863,14 +858,8 @@ ssize_t acpuclk_get_vdd_levels_str(char *buf)
 	if (buf) {
 		for (i = 0; drv.acpu_freq_tbl[i].speed.khz; i++) {
 			if (drv.acpu_freq_tbl[i].use_for_scaling) {
-<<<<<<< HEAD
 				len += sprintf(buf + len, "%lumhz: %i mV\n", drv.acpu_freq_tbl[i].speed.khz/1000,
 						drv.acpu_freq_tbl[i].vdd_core/1000 );
-=======
-				/* updated to use uv required by 8x60 architecture - faux123 */
-				len += sprintf(buf + len, "%8lu: %8d\n", drv.acpu_freq_tbl[i].speed.khz,
-						drv.acpu_freq_tbl[i].vdd_core );
->>>>>>> 116b76f3... Userspace Voltage Control: tweaked faux's original work
 			}
 		}
 	}
