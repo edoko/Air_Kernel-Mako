@@ -193,7 +193,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
-CROSS_COMPILE	?= /home/edoko/gcc-linaro-4.7.3-20130221/bin/arm-linux-gnueabihf-
+CROSS_COMPILE	?= /home/edoko/arm-eabi-4.6/bin/arm-eabi-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -351,11 +351,11 @@ CC		= $(srctree)/scripts/gcc-wrapper.py $(REAL_CC)
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   = -fno-pic -pipe
+CFLAGS_MODULE   = -fno-pic -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon -pipe
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
-CFLAGS_KERNEL	= -mcpu=cortex-a15 -mfpu=neon -pipe
-AFLAGS_KERNEL	= -mcpu=cortex-a15 -mfpu=neon -pipe
+CFLAGS_KERNEL	= -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon -pipe
+AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -373,13 +373,10 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -fmodulo-sched -fmodulo-sched-allow-regmoves \
-		   -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
-		   -mcpu=cortex-a15 -mfpu=neon \
-		   -mno-unaligned-access -pipe
-
-KBUILD_AFLAGS_KERNEL := -mcpu=cortex-a15 -mfpu=neon -pipe
-KBUILD_CFLAGS_KERNEL := -mcpu=cortex-a15 -mfpu=neon -pipe
+		   -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon \
+		   -pipe
+KBUILD_AFLAGS_KERNEL :=
+KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE

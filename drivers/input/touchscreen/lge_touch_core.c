@@ -420,7 +420,7 @@ static int touch_ic_init(struct lge_touch_data *ts)
 		next_work = atomic_read(&ts->next_work);
 
 		if (unlikely(int_pin != 1 && next_work <= 0)) {
-			TOUCH_INFO_MSG("WARN: Interrupt pin is low"
+			TOUCH_INFO_MSG("WARN: (init)Interrupt pin is low"
 					" - next_work: %d, try_count: %d]\n",
 					next_work, ts->ic_init_err_cnt);
 			goto err_out_retry;
@@ -880,7 +880,7 @@ out:
 		next_work = atomic_read(&ts->next_work);
 
 		if (unlikely(int_pin != 1 && next_work <= 0)) {
-			TOUCH_INFO_MSG("WARN: Interrupt pin is low - "
+			TOUCH_INFO_MSG("WARN: (work)Interrupt pin is low - "
 					"next_work: %d, try_count: %d]\n",
 					next_work, ts->work_sync_err_cnt);
 			goto err_out_retry;
@@ -1639,16 +1639,92 @@ static ssize_t store_charger(struct lge_touch_data *ts, const char *buf, size_t 
 }
 
 /*
- * Lets tweak the accuracy filter:
+ * Jitter filter control sysfs
+ * 
+ * Stock only allows everything to be set in one command
+ * This allows apps/scripts to easily read/write the variables.
+ * 
+ * The jitter filter should be disabled (jitter_filter_enable = 0) before tweaking changes as to disrupt the touchscreen.
+ * After enabled, the filter can be turned back on to use/test the new values set.
+ *    
+ *  @jitter_filter_enable
+ *  @adjust_margin
+ */
+
+// jitter_filter_enable
+static ssize_t store_jitter_filter_enable(struct lge_touch_data *ts, const char *buf, size_t count)
+{
+	unsigned int val;
+
+	sscanf(buf, "%d", &val);
+	if (val != 1 && val != 0 )
+		val=0;
+	ts->pdata->role->jitter_filter_enable = val;
+	pr_info("LG touchscreen jitter_filter_enable: %d", ts->pdata->role->jitter_filter_enable);
+
+	return count;
+}
+
+static ssize_t show_jitter_filter_enable(struct lge_touch_data *ts, char *buf)
+{
+	return sprintf(buf, "%d\n", ts->pdata->role->jitter_filter_enable);
+}
+
+//adjust_margin
+static ssize_t store_adjust_margin(struct lge_touch_data *ts, const char *buf, size_t count)
+{
+	unsigned int val;
+
+	sscanf(buf, "%d", &val);
+
+	ts->jitter_filter.adjust_margin = val;
+
+	return count;
+}
+
+static ssize_t show_adjust_margin(struct lge_touch_data *ts, char *buf)
+{
+	return sprintf(buf, "%d\n", ts->jitter_filter.adjust_margin);
+}
+
+
+/*
+ * Accuracy filter control sysfs
  *
- *  @ignore_pressure_gap;
- *  @touch_max_count;
- *  @delta_max;
- *  @max_pressure;
- *  @direction_count;
- *  @time_to_max_pressure;
+ * Stock only allows everything to be set in one command
+ * This opens each component up so that apps/scripts can easily read/write the variables.
+ *
+ * The accuracy filter should be disabled (accuracy_filter_enable = 0) before tweaking changes as to disrupt the touchscreen.
+ * After enabled, the filter can be turned back on to use/test the new values set.
+ *
+ *  @accuracy_filter_enable
+ *  @ignore_pressure_gap
+ *  @touch_max_count
+ *  @delta_max
+ *  @max_pressure
+ *  @direction_count
+ *  @time_to_max_pressure
  *
  */
+
+// accuracy_filter_enable
+static ssize_t store_accuracy_filter_enable(struct lge_touch_data *ts, const char *buf, size_t count)
+{
+	unsigned int val;
+
+	sscanf(buf, "%d", &val);
+	if (val != 1 && val != 0 )
+		val=0;
+	ts->pdata->role->accuracy_filter_enable = val;
+	pr_info("LG touchscreen accuracy_filter_enable: %d", ts->pdata->role->accuracy_filter_enable);
+
+	return count;
+}
+
+static ssize_t show_accuracy_filter_enable(struct lge_touch_data *ts, char *buf)
+{
+	return sprintf(buf, "%d\n", ts->pdata->role->accuracy_filter_enable);
+}
 
 //ignore_pressure_gap
 static ssize_t store_ignore_pressure_gap(struct lge_touch_data *ts, const char *buf, size_t count)
@@ -1764,6 +1840,10 @@ static LGE_TOUCH_ATTR(pointer_location, S_IRUGO | S_IWUSR, show_pointer_location
 					store_pointer_location);
 static LGE_TOUCH_ATTR(charger, S_IRUGO | S_IWUSR, show_charger, store_charger);
 
+static LGE_TOUCH_ATTR(jitter_filter_enable, S_IRUGO | S_IWUSR, show_jitter_filter_enable, store_jitter_filter_enable);
+static LGE_TOUCH_ATTR(adjust_margin, S_IRUGO | S_IWUSR, show_adjust_margin, store_adjust_margin);
+
+static LGE_TOUCH_ATTR(accuracy_filter_enable, S_IRUGO | S_IWUSR, show_accuracy_filter_enable, store_accuracy_filter_enable);
 static LGE_TOUCH_ATTR(ignore_pressure_gap, S_IRUGO | S_IWUSR, show_ignore_pressure_gap, store_ignore_pressure_gap);
 static LGE_TOUCH_ATTR(touch_max_count, S_IRUGO | S_IWUSR, show_touch_max_count, store_touch_max_count);
 static LGE_TOUCH_ATTR(delta_max, S_IRUGO | S_IWUSR, show_delta_max, store_delta_max);
@@ -1782,6 +1862,9 @@ static struct attribute *lge_touch_attribute_list[] = {
 	&lge_touch_attr_show_touches.attr,
 	&lge_touch_attr_pointer_location.attr,
 	&lge_touch_attr_charger.attr,
+	&lge_touch_attr_jitter_filter_enable.attr,
+	&lge_touch_attr_adjust_margin.attr,
+	&lge_touch_attr_accuracy_filter_enable.attr,
 	&lge_touch_attr_ignore_pressure_gap.attr,
 	&lge_touch_attr_touch_max_count.attr,
 	&lge_touch_attr_delta_max.attr,
@@ -2092,23 +2175,16 @@ static int touch_probe(struct i2c_client *client,
 		queue_work(touch_wq, &ts->work_fw_upgrade);
 	}
 
-	/* jitter solution */
-	if (ts->pdata->role->jitter_filter_enable) {
-		ts->jitter_filter.adjust_margin = 100;
-	}
+	/* jitter solution - not enabled by default, but still set stock defaults if turned on */
+	ts->jitter_filter.adjust_margin = 100;
 
-	/* accuracy solution */
-	if (ts->pdata->role->accuracy_filter_enable) {
-		ts->accuracy_filter.ignore_pressure_gap = 5;
-		ts->accuracy_filter.delta_max = 50;
-		ts->accuracy_filter.max_pressure = 255;
-		ts->accuracy_filter.time_to_max_pressure = one_sec / 25;
-		ts->accuracy_filter.direction_count = one_sec / 8;
-		ts->accuracy_filter.touch_max_count = one_sec / 3;
-		ts->accuracy_filter.time_to_max_pressure = one_sec / 20;
-		ts->accuracy_filter.direction_count = one_sec / 10;
-		ts->accuracy_filter.touch_max_count = one_sec / 10;
-	}
+	/* accuracy solution - not enabled by default, but still set stock defaults if turned on */
+	ts->accuracy_filter.ignore_pressure_gap = 5;
+	ts->accuracy_filter.delta_max = 100;
+	ts->accuracy_filter.max_pressure = 255;
+	ts->accuracy_filter.time_to_max_pressure = one_sec / 20;
+	ts->accuracy_filter.direction_count = one_sec / 6;
+	ts->accuracy_filter.touch_max_count = one_sec / 2;
 
         device_init_wakeup(&client->dev, true);
 
@@ -2255,7 +2331,8 @@ static void touch_early_suspend(struct early_suspend *h)
         }
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
         else if (s2w_switch > 0) {
-                enable_irq_wake(ts->client->irq);
+		release_all_ts_event(ts);
+		enable_irq_wake(ts->client->irq);
         }
 #endif
 }
@@ -2266,6 +2343,9 @@ static void touch_late_resume(struct early_suspend *h)
 			container_of(h, struct lge_touch_data, early_suspend);
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	int int_pin = 0;
+	int next_work = 0;
+
         scr_suspended = false;
 #endif
 
@@ -2299,11 +2379,30 @@ static void touch_late_resume(struct early_suspend *h)
 		        queue_delayed_work(touch_wq, &ts->work_init, 0);
         }
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
-        else if (s2w_switch > 0)
+        else if (s2w_switch > 0) {
                 disable_irq_wake(ts->client->irq);
+		/* Interrupt pin check after IC init - avoid Touch lockup */
+		if (ts->pdata->role->operation_mode == INTERRUPT_MODE) {
+			int_pin = gpio_get_value(ts->pdata->int_pin);
+			next_work = atomic_read(&ts->next_work);
+
+			if (unlikely(int_pin != 1 && next_work <= 0)) {
+				TOUCH_INFO_MSG("WARN: (s2w)Interrupt pin is low (Lockup detected) - next_work: %d, try_count: %d]\n",
+						next_work, ts->ic_init_err_cnt);
+				pr_warn("touch core: (s2w)disable irqs!\n");
+				disable_irq(ts->client->irq);
+				pr_warn("touch core: (s2w)release all Touch events!\n");
+				release_all_ts_event(ts);
+				pr_warn("touch core: (s2w)enable irqs!\n");
+				enable_irq(ts->client->irq);
+				pr_warn("touch core: (s2w)force IC init!\n");
+				touch_ic_init(ts);
+			}
+		}
+	}
 #endif
 }
-#endif
+#endif	/* early suspend */
 
 #if defined(CONFIG_PM)
 static int touch_suspend(struct device *device)
