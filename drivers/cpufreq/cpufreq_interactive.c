@@ -35,6 +35,9 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_interactive.h>
 
+#include <linux/syscalls.h>
+#include <linux/highuid.h>
+
 static int active_count;
 
 struct cpufreq_interactive_cpuinfo {
@@ -129,6 +132,7 @@ struct cpufreq_governor cpufreq_gov_interactive = {
 	.owner = THIS_MODULE,
 };
 
+<<<<<<< HEAD
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
 						  cputime64_t *wall)
 {
@@ -163,6 +167,18 @@ static inline cputime64_t get_cpu_idle_time(unsigned int cpu,
 		idle_time += get_cpu_iowait_time_us(cpu, wall);
 
 	return idle_time;
+=======
+#define	AID_SYSTEM	(1000)
+static void dbs_chown(void)
+{
+	int ret;
+
+	ret =
+	sys_chown("/sys/devices/system/cpu/cpufreq/interactive/boostpulse",
+		low2highuid(AID_SYSTEM), low2highgid(0));
+	if (ret)
+		pr_err("sys_chown: boostpulse error: %d", ret);
+>>>>>>> 5ba3a01... interactive: change permission for boostpulse from root to system
 }
 
 static void cpufreq_interactive_timer_resched(
@@ -1033,6 +1049,8 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			return -EINVAL;
 
 		mutex_lock(&gov_lock);
+
+		dbs_chown();
 
 		freq_table =
 			cpufreq_frequency_get_table(policy->cpu);
