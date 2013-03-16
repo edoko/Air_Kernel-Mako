@@ -1841,10 +1841,23 @@ static int touch_probe(struct i2c_client *client,
 		queue_work(touch_wq, &ts->work_fw_upgrade);
 	}
 
+<<<<<<< HEAD
 	/* jitter solution */
 	if (ts->pdata->role->jitter_filter_enable) {
 		ts->jitter_filter.adjust_margin = 100;
 	}
+=======
+	/* jitter solution - not enabled by default, but still set stock defaults if turned on */
+	ts->jitter_filter.adjust_margin = 100;
+
+	/* accuracy solution - not enabled by default, but still set stock defaults if turned on */
+	ts->accuracy_filter.ignore_pressure_gap = 5;
+	ts->accuracy_filter.delta_max = 50;
+	ts->accuracy_filter.max_pressure = 55;
+	ts->accuracy_filter.time_to_max_pressure = 1;
+	ts->accuracy_filter.direction_count = 8;
+	ts->accuracy_filter.touch_max_count = 4;
+>>>>>>> 0eb8ed9... input: touchscreen: change filter parameters courtesy of viking37.
 
 	/* accuracy solution */
 	if (ts->pdata->role->accuracy_filter_enable) {
