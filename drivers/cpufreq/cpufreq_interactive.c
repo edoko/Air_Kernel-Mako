@@ -584,7 +584,7 @@ static void cpufreq_interactive_boost(void)
 		pcpu = &per_cpu(cpuinfo, i);
 
 		if (pcpu->target_freq < hispeed_freq) {
-			pcpu->target_freq = hispeed_freq;
+			pcpu->target_freq = 702000;
 			cpumask_set_cpu(i, &speedchange_cpumask);
 			pcpu->hispeed_validate_time =
 				ktime_to_us(ktime_get());
@@ -596,7 +596,7 @@ static void cpufreq_interactive_boost(void)
 		 * validated.
 		 */
 
-		pcpu->floor_freq = hispeed_freq;
+		pcpu->floor_freq = 702000;
 		pcpu->floor_validate_time = ktime_to_us(ktime_get());
 	}
 
