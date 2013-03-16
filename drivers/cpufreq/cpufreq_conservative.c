@@ -46,8 +46,7 @@
 #define MIN_SAMPLING_RATE_RATIO			(1)
 
 static unsigned int min_sampling_rate;
-
-extern unsigned int touch_is_pressed;
+static unsigned int touch_is_pressed;
 
 #define LATENCY_MULTIPLIER			(500)
 #define MIN_LATENCY_MULTIPLIER		(100)
@@ -461,7 +460,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	}
 }
 
-static void do_dbs_timer(struct work_struct *work)
+static inline void do_dbs_timer(struct work_struct *work)
 {
 	struct cpu_dbs_info_s *dbs_info =
 		container_of(work, struct cpu_dbs_info_s, work.work);
