@@ -1533,17 +1533,6 @@ static void cpu_down_work(struct work_struct *work)
  * print hotplug debugging info.
  * which 1 : UP, 0 : DOWN
  */
-static void debug_hotplug_check(int which, int rq_avg, int freq,
-			 struct cpu_usage *usage)
-{
-	int cpu;
-	printk(KERN_ERR "CHECK %s rq %d.%02d freq %d [", which ? "up" : "down",
-	       rq_avg / 100, rq_avg % 100, freq);
-	for_each_online_cpu(cpu) {
-		printk(KERN_ERR "(%d, %d), ", cpu, usage->load[cpu]);
-	}
-	printk(KERN_ERR "]\n");
-}
 
 static int check_up(void)
 {
