@@ -287,10 +287,12 @@ static int mn_get_next_freq(unsigned int curfreq, unsigned int updown, unsigned 
     return (curfreq); // not found
     }
 
-static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
-							cputime64_t *wall)
+static inline u64 get_cpu_idle_time_jiffy(unsigned int cpu,
+							u64 *wall)
 {
-	cputime64_t idle_time, cur_wall_time, busy_time = 0;
+	u64 idle_time;
+	u64 cur_wall_time;
+	u64 busy_time;
 
 	cur_wall_time = jiffies64_to_cputime64(get_jiffies_64());
 
