@@ -29,7 +29,7 @@
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(90)
+#define DEF_FREQUENCY_UP_THRESHOLD		(80)
 #define DEF_FREQUENCY_DOWN_THRESHOLD	(20)
 #define DEF_SMOOTH_UI			(0)
 
@@ -48,7 +48,7 @@
 static unsigned int min_sampling_rate;
 static unsigned int touch_is_pressed;
 
-#define LATENCY_MULTIPLIER			(500)
+#define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER		(100)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
