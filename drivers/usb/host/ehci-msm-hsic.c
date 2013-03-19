@@ -1925,6 +1925,15 @@ static int __devexit ehci_hsic_msm_remove(struct platform_device *pdev)
 		free_irq(mehci->wakeup_irq, mehci);
 	}
 
+<<<<<<< HEAD
+=======
+	if (mehci->async_irq) {
+		/* Async IRQ is used only in absence of dedicated wakeup irq */
+		if (!mehci->wakeup_irq)
+			disable_irq_wake(mehci->async_irq);
+		free_irq(mehci->async_irq, mehci);
+	}
+>>>>>>> 1a1a9c6... USB: ehci-msm-hsic: Fix unbalanced IRQ wakeup disable warning
 	/*
 	 * If the update request is called after unregister, the request will
 	 * fail. Results are undefined if unregister is called in the middle of
