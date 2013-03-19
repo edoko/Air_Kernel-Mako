@@ -45,6 +45,7 @@
 /* PTE EFUSE register offset. */
 #define PTE_EFUSE		0xC0
 
+
 static DEFINE_MUTEX(driver_lock);
 static DEFINE_SPINLOCK(l2_lock);
 
