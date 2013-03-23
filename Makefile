@@ -370,7 +370,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon \
-		   -ftree-vectorize -pipe
+		   -ftree-vectorize -mno-unaligned-access -pipe
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
