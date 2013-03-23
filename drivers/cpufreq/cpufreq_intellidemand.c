@@ -32,6 +32,9 @@
 #endif
 #include <linux/rq_stats.h>
 
+#include <linux/syscalls.h>
+#include <linux/highuid.h>
+
 #define INTELLIDEMAND_MAJOR_VERSION	4
 #define INTELLIDEMAND_MINOR_VERSION	2
 
@@ -56,9 +59,9 @@
 #define BOOSTED_SAMPLING_RATE			(15000)
 #define DBS_INPUT_EVENT_MIN_FREQ		(1026000)
 #define DBS_SYNC_FREQ				(702000)
-#define DBS_OPTIMAL_FREQ			(1296000)
+#define DBS_OPTIMAL_FREQ			(1242000)
 
-u64 freq_boosted_time;
+static u64 freq_boosted_time;
 /*
  * The polling frequency of this governor depends on the capability of
  * the processor. Default polling frequency is 1000 times the transition
@@ -85,13 +88,9 @@ static unsigned long stored_sampling_rate;
 
 /* have the timer rate booted for this much time 2.5s*/
 #define TIMER_RATE_BOOST_TIME 2500000
-int sampling_rate_boosted;
-u64 sampling_rate_boosted_time;
-unsigned int current_sampling_rate;
-
-#ifdef CONFIG_CPUFREQ_ID_PERFLOCK
-static unsigned int saved_policy_min;
-#endif
+static int sampling_rate_boosted;
+static u64 sampling_rate_boosted_time;
+static unsigned int current_sampling_rate;
 
 static void do_dbs_timer(struct work_struct *work);
 static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
@@ -424,8 +423,12 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 	unsigned long val;
 
 	ret = kstrtoul(buf, 0, &val);
-	if (ret < 0)
+	if (ret < 0) {
+		pr_err("Bad Boost reqeust!\n");
 		return ret;
+	}
+
+	//pr_info("Boost requested!\n");
 
 	dbs_tuners_ins.boosted = 1;
 	freq_boosted_time = ktime_to_us(ktime_get());
@@ -433,6 +436,7 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 	if (sampling_rate_boosted) {
 		sampling_rate_boosted = 0;
 		dbs_tuners_ins.sampling_rate = current_sampling_rate;
+		//pr_info("Boosted Sampling rate %u\n", current_sampling_rate);
 	}
 	return count;
 }
@@ -1361,10 +1365,10 @@ static void do_dbs_timer(struct work_struct *work)
 			if (!active_state)
 			{
 				/* set freq to 1.5GHz */
-				pr_info("LMF: CPU0 set max freq to: %lu\n", lmf_active_max_limit);
+				//pr_info("LMF: CPU0 set max freq to: %lu\n", lmf_active_max_limit);
 				cpufreq_set_limits(BOOT_CPU, SET_MAX, lmf_active_max_limit);
 				
-				pr_info("LMF: CPUX set max freq to: %lu\n", lmf_active_max_limit);
+				//pr_info("LMF: CPUX set max freq to: %lu\n", lmf_active_max_limit);
 				if (cpu_online(NON_BOOT_CPU1) ||
 					cpu_online(NON_BOOT_CPU2) ||
 					cpu_online(NON_BOOT_CPU3)) {
@@ -1478,10 +1482,10 @@ static void do_dbs_timer(struct work_struct *work)
 								active_state = false;
 
 								/* set freq to 1.0GHz */
-								pr_info("LMF: CPU0 set max freq to: %lu\n", lmf_inactive_max_limit);
+								//pr_info("LMF: CPU0 set max freq to: %lu\n", lmf_inactive_max_limit);
 								cpufreq_set_limits(BOOT_CPU, SET_MAX, lmf_inactive_max_limit);
 								
-								pr_info("LMF: CPUX set max freq to: %lu\n", lmf_inactive_max_limit);
+								//pr_info("LMF: CPUX set max freq to: %lu\n", lmf_inactive_max_limit);
 								if (cpu_online(NON_BOOT_CPU1) ||
 									cpu_online(NON_BOOT_CPU2) ||
 									cpu_online(NON_BOOT_CPU3)) {
@@ -1525,10 +1529,10 @@ static void do_dbs_timer(struct work_struct *work)
 								active_state = true;
 
 								/* set freq to 1.5GHz */
-								pr_info("LMF: CPU0 set max freq to: %lu\n", lmf_active_max_limit);
+								//pr_info("LMF: CPU0 set max freq to: %lu\n", lmf_active_max_limit);
 								cpufreq_set_limits(BOOT_CPU, SET_MAX, lmf_active_max_limit);
 								
-								pr_info("LMF: CPUX set max freq to: %lu\n", lmf_active_max_limit);
+								//pr_info("LMF: CPUX set max freq to: %lu\n", lmf_active_max_limit);
 								if (cpu_online(NON_BOOT_CPU1) ||
 									cpu_online(NON_BOOT_CPU2) ||
 									cpu_online(NON_BOOT_CPU3)) {
@@ -1629,6 +1633,21 @@ static int should_io_be_busy(void)
 #endif
 }
 
+#define	AID_SYSTEM	(1000)
+static void dbs_chown(void)
+{
+	int ret;
+
+	ret =
+	sys_chown("/sys/devices/system/cpu/cpufreq/intellidemand/sampling_rate",
+		low2highuid(AID_SYSTEM), low2highgid(0));
+	ret =
+	sys_chown("/sys/devices/system/cpu/cpufreq/intellidemand/boostpulse",
+		low2highuid(AID_SYSTEM), low2highgid(0));
+	if (ret)
+		pr_err("sys_chown: boostpulse error: %d", ret);
+}
+
 static void dbs_refresh_callback(struct work_struct *work)
 {
 	struct cpufreq_policy *policy;
@@ -1652,8 +1671,11 @@ static void dbs_refresh_callback(struct work_struct *work)
 	}
 
 	if (policy->cur < DBS_INPUT_EVENT_MIN_FREQ) {
-		 //pr_info("%s: set cpufreq to DBS_INPUT_EVENT_MIN_FREQ(%d)
-		 //	directly due to input events!\n", __func__, DBS_INPUT_EVENT_MIN_FREQ);
+#if 0
+		pr_info("%s: set cpufreq to DBS_INPUT_EVENT_MIN_FREQ(%d) \
+			directly due to input events!\n", __func__, \
+			DBS_INPUT_EVENT_MIN_FREQ);
+#endif
 		/*
 		 * Arch specific cpufreq driver may fail.
 		 * Don't update governor frequency upon failure.
@@ -1783,6 +1805,8 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			return -EINVAL;
 
 		mutex_lock(&dbs_mutex);
+
+		dbs_chown();
 
 		dbs_enable++;
 		for_each_cpu(j, policy->cpus) {

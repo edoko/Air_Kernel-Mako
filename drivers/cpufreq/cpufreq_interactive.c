@@ -34,6 +34,9 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_interactive.h>
 
+#include <linux/syscalls.h>
+#include <linux/highuid.h>
+
 static int active_count;
 
 struct cpufreq_interactive_cpuinfo {
@@ -79,7 +82,7 @@ static int ntarget_loads = ARRAY_SIZE(default_target_loads);
 /*
  * The minimum amount of time to spend at a frequency before we can ramp down.
  */
-#define DEFAULT_MIN_SAMPLE_TIME (80 * USEC_PER_MSEC)
+#define DEFAULT_MIN_SAMPLE_TIME (60 * USEC_PER_MSEC)
 static unsigned long min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
 
 /*
@@ -121,6 +124,18 @@ struct cpufreq_governor cpufreq_gov_interactive = {
 	.max_transition_latency = 10000000,
 	.owner = THIS_MODULE,
 };
+
+#define	AID_SYSTEM	(1000)
+static void dbs_chown(void)
+{
+	int ret;
+
+	ret =
+	sys_chown("/sys/devices/system/cpu/cpufreq/interactive/boostpulse",
+		low2highuid(AID_SYSTEM), low2highgid(0));
+	if (ret)
+		pr_err("sys_chown: boostpulse error: %d", ret);
+}
 
 static void cpufreq_interactive_timer_resched(
 	struct cpufreq_interactive_cpuinfo *pcpu)
@@ -915,6 +930,8 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			return -EINVAL;
 
 		mutex_lock(&gov_lock);
+
+		dbs_chown();
 
 		freq_table =
 			cpufreq_frequency_get_table(policy->cpu);
