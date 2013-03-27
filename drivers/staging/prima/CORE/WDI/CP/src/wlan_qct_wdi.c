@@ -20314,7 +20314,7 @@ WDI_DS_AssignDatapathContext (void *pContext, void *pDPContext)
  @see
  @return pointer to Datapath context
 */
-WPT_INLINE void *
+void *
 WDI_DS_GetDatapathContext (void *pContext)
 {
    WDI_ControlBlockType *pCB = (WDI_ControlBlockType *)pContext;
