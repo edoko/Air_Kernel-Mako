@@ -836,7 +836,7 @@ __limHandleSmeStartBssRequest(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
              *reserved reserved RIFS Lsig n-GF ht20 11g 11b*/
             palCopyMemory( pMac->hHdd, (void *) &psessionEntry->cfgProtection,
                           (void *) &pSmeStartBssReq->ht_capab,
-                          sizeof( tCfgProtection ));
+                          sizeof( tANI_U16 ));
             psessionEntry->pAPWPSPBCSession = NULL; // Initialize WPS PBC session link list
         }
 
@@ -1584,6 +1584,18 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         psessionEntry->htSupportedChannelWidthSet = (pSmeJoinReq->cbMode)?1:0; // This is already merged value of peer and self - done by csr in csrGetCBModeFromIes
         psessionEntry->htRecommendedTxWidthSet = psessionEntry->htSupportedChannelWidthSet;
         psessionEntry->htSecondaryChannelOffset = pSmeJoinReq->cbMode;
+
+        /* Record if management frames need to be protected */
+#ifdef WLAN_FEATURE_11W
+        if(eSIR_ED_AES_128_CMAC == pSmeJoinReq->MgmtEncryptionType)
+        {
+            psessionEntry->limRmfEnabled = 1;
+        }
+        else
+        {
+            psessionEntry->limRmfEnabled = 0;
+        }
+#endif
 
         /*Store Persona */
         psessionEntry->pePersona = pSmeJoinReq->staPersona;
@@ -4313,6 +4325,11 @@ limSendSetMaxTxPowerReq ( tpAniSirGlobal pMac, tPowerdBm txPower, tpPESession pS
 #if defined(WLAN_VOWIFI_DEBUG) || defined(FEATURE_WLAN_CCX)
    PELOG1(limLog( pMac, LOG1, "%s:%d: Allocated memory for pMaxTxParams...will be freed in other module\n", __func__, __LINE__ );)
 #endif
+   if( pMaxTxParams == NULL )
+   {
+      limLog( pMac, LOGE, "%s:%d: pMaxTxParams is NULL\n", __func__, __LINE__);
+      return eSIR_FAILURE;
+   }
    pMaxTxParams->power = txPower;
    palCopyMemory( pMac->hHdd, pMaxTxParams->bssId, pSessionEntry->bssId, sizeof(tSirMacAddr) );
    palCopyMemory( pMac->hHdd, pMaxTxParams->selfStaMacAddr, pSessionEntry->selfMacAddr, sizeof(tSirMacAddr) );
@@ -4693,6 +4710,7 @@ tANI_U32 limCalculateNOADuration(tpAniSirGlobal pMac, tANI_U16 msgType, tANI_U32
 
 void limProcessRegdDefdSmeReqAfterNOAStart(tpAniSirGlobal pMac)
 {
+    tANI_BOOLEAN bufConsumed = TRUE;
 
     limLog(pMac, LOG1, FL("Process defd sme req %d\n"), pMac->lim.gDeferMsgTypeForNOA);
     if ( (pMac->lim.gDeferMsgTypeForNOA != 0) &&
@@ -4707,7 +4725,14 @@ void limProcessRegdDefdSmeReqAfterNOAStart(tpAniSirGlobal pMac)
                 __limProcessSmeOemDataReq(pMac, pMac->lim.gpDefdSmeMsgForNOA);
                 break;
             case eWNI_SME_REMAIN_ON_CHANNEL_REQ:
-                limProcessRemainOnChnlReq(pMac, pMac->lim.gpDefdSmeMsgForNOA);
+                bufConsumed = limProcessRemainOnChnlReq(pMac, pMac->lim.gpDefdSmeMsgForNOA);
+                /* limProcessRemainOnChnlReq doesnt want us to free the buffer since
+                 * it is freed in limRemainOnChnRsp. this change is to avoid "double free"
+                 */
+                if (FALSE == bufConsumed)
+                {
+                    pMac->lim.gpDefdSmeMsgForNOA = NULL;
+                }
                 break;
             case eWNI_SME_JOIN_REQ:
                 __limProcessSmeJoinReq(pMac, pMac->lim.gpDefdSmeMsgForNOA);

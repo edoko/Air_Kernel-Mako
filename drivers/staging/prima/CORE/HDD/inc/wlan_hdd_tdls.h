@@ -212,7 +212,9 @@ u8 wlan_hdd_tdls_is_peer_progress(hdd_adapter_t *pAdapter, u8 *mac);
 
 u8 wlan_hdd_tdls_is_progress(hdd_adapter_t *pAdapter, u8* mac, u8 skip_self);
 
-void wlan_hdd_tdls_set_mode(hdd_context_t *pHddCtx, eTDLSSupportMode tdls_mode);
+void wlan_hdd_tdls_set_mode(hdd_context_t *pHddCtx,
+                            eTDLSSupportMode tdls_mode,
+                            v_BOOL_t bUpdateLast);
 
 void wlan_hdd_tdls_pre_setup(tdlsCtx_t *pHddTdlsCtx, hddTdlsPeer_t *curr_peer);
 
@@ -237,5 +239,9 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
                                 struct cfg80211_scan_request *request);
 
 void wlan_hdd_tdls_scan_done_callback(hdd_adapter_t *pAdapter);
+
+void wlan_hdd_tdls_timer_restart(hdd_adapter_t *pAdapter,
+                                 vos_timer_t *timer,
+                                 v_U32_t expirationTime);
 
 #endif // __HDD_TDSL_H

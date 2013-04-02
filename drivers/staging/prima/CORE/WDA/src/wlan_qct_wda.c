@@ -3642,6 +3642,8 @@ void WDA_UpdateBSSParams(tWDA_CbContext *pWDA,
    wdiBssParams->ucCurrentExtChannel = wdaBssParams->currentExtChannel ;
    wdiBssParams->bHiddenSSIDEn = wdaBssParams->bHiddenSSIDEn ;
 
+   wdiBssParams->ucRMFEnabled = wdaBssParams->rmfEnabled;
+
    /* copy SSID into WDI structure */
    wdiBssParams->wdiSSID.ucLength = wdaBssParams->ssId.length ;
    vos_mem_copy(wdiBssParams->wdiSSID.sSSID,
@@ -5359,9 +5361,13 @@ VOS_STATUS WDA_ProcessAddBASessionReq(tWDA_CbContext *pWDA,
    if(IS_WDI_STATUS_FAILURE(status))
    {
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-       "Failure in ADD BA Session REQ Params WDI API, free all the memory " );
+       "Failure in ADD BA Session REQ Params WDI API, free all the memory =%d\n", status);
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+       "Send ADD BA failure response to PE\n");
+      pAddBAReqParams->status =
+            CONVERT_WDI2SIR_STATUS(status) ;
+      WDA_SendMsg(pWDA, WDA_ADDBA_RSP, (void *)pAddBAReqParams , 0) ;
       vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
-      vos_mem_free(pWdaParams->wdaMsgParam);
       vos_mem_free(pWdaParams);
    }
    return CONVERT_WDI2VOS_STATUS(status) ;
@@ -5941,6 +5947,16 @@ VOS_STATUS WDA_ProcessSendBeacon(tWDA_CbContext *pWDA,
                               pSendbeaconParams->beaconLength;
    wdiSendBeaconReqParam.wdiSendBeaconParamsInfo.timIeOffset = 
                               pSendbeaconParams->timIeOffset;
+   /* p2pIeOffset should be atleast greater than timIeOffset */
+   if ((pSendbeaconParams->p2pIeOffset != 0) &&
+           (pSendbeaconParams->p2pIeOffset <
+            pSendbeaconParams->timIeOffset))
+   {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "Invalid p2pIeOffset = %hu ", pSendbeaconParams->p2pIeOffset);
+       VOS_ASSERT( 0 );
+       return WDI_STATUS_E_FAILURE;
+   }
    wdiSendBeaconReqParam.wdiSendBeaconParamsInfo.usP2PIeOffset = 
                               pSendbeaconParams->p2pIeOffset;
    /* Copy the beacon template to local buffer */
@@ -7410,6 +7426,42 @@ VOS_STATUS WDA_ProcessWlanSuspendInd(tWDA_CbContext *pWDA,
    vos_mem_free(pWlanSuspendParam);
    return CONVERT_WDI2VOS_STATUS(wdiStatus) ;
 }
+
+#ifdef WLAN_FEATURE_11W
+/*
+ * FUNCTION: WDA_ProcessExcludeUnecryptInd
+ *
+ */
+VOS_STATUS WDA_ProcessExcludeUnecryptInd(tWDA_CbContext *pWDA,
+                              tSirWlanExcludeUnencryptParam *pExclUnencryptParam)
+{
+   WDI_Status wdiStatus;
+   WDI_ExcludeUnencryptIndType wdiExclUnencryptParams;
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "------> %s ", __func__);
+
+   wdiExclUnencryptParams.bExcludeUnencrypt = pExclUnencryptParam->excludeUnencrypt;
+   vos_mem_copy(wdiExclUnencryptParams.bssid, pExclUnencryptParam->bssId,
+                sizeof(tSirMacAddr));
+
+   wdiExclUnencryptParams.wdiReqStatusCB = NULL;
+   wdiExclUnencryptParams.pUserData = pWDA;
+
+   wdiStatus = WDI_ExcludeUnencryptedInd(&wdiExclUnencryptParams);
+   if(WDI_STATUS_PENDING == wdiStatus)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+              "Pending received for %s:%d ", __func__, __LINE__ );
+   }
+   else if( WDI_STATUS_SUCCESS_SYNC != wdiStatus )
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "Failure in %s:%d ", __func__, __LINE__ );
+   }
+   vos_mem_free(pExclUnencryptParam);
+   return CONVERT_WDI2VOS_STATUS(wdiStatus) ;
+}
+#endif
 
 /*
  * FUNCTION: WDA_ProcessWlanResumeCallback
@@ -10251,6 +10303,13 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
                    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                                             " 11AC Feature is Not Supported \n");
           break;
+      }
+#endif
+#ifdef WLAN_FEATURE_11W
+      case WDA_EXCLUDE_UNENCRYPTED_IND:
+      {
+         WDA_ProcessExcludeUnecryptInd(pWDA, (tSirWlanExcludeUnencryptParam *)pMsg->bodyptr);
+         break;
       }
 #endif
       default:
