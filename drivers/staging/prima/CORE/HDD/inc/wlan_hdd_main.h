@@ -124,7 +124,7 @@
 #define WAIT_TIME_TDLS_ADD_STA      1500
 
 /** Maximum time(ms) to wait for tdls mgmt to complete **/
-#define WAIT_TIME_TDLS_MGMT         11000
+#define WAIT_TIME_TDLS_MGMT         2000
 
 /* Maximum time to get crda entry settings */
 #define CRDA_WAIT_TIME 300
@@ -141,7 +141,15 @@
 #define MAC_ADDRESS_STR "%02x:%02x:%02x:%02x:%02x:%02x"
 #define MAX_GENIE_LEN 255
 
+#if defined(QC_WLAN_CHIPSET_PRIMA)
 #define WLAN_CHIP_VERSION   "WCNSS"
+#elif defined(ANI_CHIPSET_LIBRA)
+#define WLAN_CHIP_VERSION   "WCN1312"
+#elif defined(ANI_CHIPSET_VOLANS)
+#define WLAN_CHIP_VERSION   "WCN1314"
+#else
+#define WLAN_CHIP_VERSION   "UNKNOWN"
+#endif
 
 #define hddLog(level, args...) VOS_TRACE( VOS_MODULE_ID_HDD, level, ## args)
 #define ENTER() VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, "Enter:%s", __func__)
@@ -158,10 +166,6 @@
 #define WLAN_HDD_PUBLIC_ACTION_FRAME_TYPE_OFFSET 30
 #define WLAN_HDD_P2P_SOCIAL_CHANNELS 3
 #define WLAN_HDD_P2P_SINGLE_CHANNEL_SCAN 1
-
-#ifdef WLAN_FEATURE_11W
-#define WLAN_HDD_SA_QUERY_ACTION_FRAME 8
-#endif
 
 #define WLAN_HDD_PUBLIC_ACTION_TDLS_DISC_RESP 14
 #define WLAN_HDD_TDLS_ACTION_FRAME 12
@@ -218,14 +222,6 @@ typedef struct hdd_chip_reset_stats_s
    __u32    totalUnknownExceptions;
 } hdd_chip_reset_stats_t;
 
-#ifdef WLAN_FEATURE_11W
-typedef struct hdd_pmf_stats_s
-{
-   uint8    numUnprotDeauthRx;
-   uint8    numUnprotDisassocRx;
-} hdd_pmf_stats_t;
-#endif
-
 typedef struct hdd_stats_s
 {
    tCsrSummaryStatsInfo       summary_stat;
@@ -236,9 +232,6 @@ typedef struct hdd_stats_s
    tCsrPerStaStatsInfo        perStaStats;
    hdd_tx_rx_stats_t          hddTxRxStats;
    hdd_chip_reset_stats_t     hddChipResetStats;
-#ifdef WLAN_FEATURE_11W
-   hdd_pmf_stats_t            hddPmfStats;
-#endif
 } hdd_stats_t;
 
 typedef enum

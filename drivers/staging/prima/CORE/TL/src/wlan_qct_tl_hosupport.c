@@ -90,6 +90,7 @@
 //#define WLANTL_HO_UTEST
 
 #define WLANTL_HO_DEFAULT_RSSI      0xFF
+#define WLANTL_HO_DEFAULT_ALPHA     5
 #define WLANTL_HO_INVALID_RSSI      -100
 /* RSSI sampling period, usec based
  * To reduce performance overhead
@@ -875,20 +876,27 @@ VOS_STATUS WLANTL_HSGetRSSI
    TLHS_UtestHandleNewRSSI(&currentRSSI, pAdapter);
 #endif /* WLANTL_HO_UTEST */
 
-   if(0 == tlCtxt->atlSTAClients[STAid]->rssiAvg)
+/* Commenting this part of the code as this may not be necessarity true in all cases */
+#if 0
+   if(WLANTL_HO_INVALID_RSSI == currentRSSI)
+   {
+      return status;
+   }
+#endif
+
+   if(0 == currentHO->historyRSSI)
    {
       *currentAvgRSSI = currentRSSI;
    }
    else
    {
-      *currentAvgRSSI = ((tlCtxt->atlSTAClients[STAid]->rssiAvg  *
-                          tlCtxt->atlSTAClients[STAid]->rssiAlpha) +
-                         (currentRSSI * (10 - tlCtxt->atlSTAClients[STAid]->rssiAlpha))) / 10;
+      *currentAvgRSSI = ((currentHO->historyRSSI * currentHO->alpha) +
+                         (currentRSSI * (10 - currentHO->alpha))) / 10;
    }
-
 #ifdef RSSI_HACK
    *currentAvgRSSI = (v_S7_t)dumpCmdRSSI;
 #endif
+
 
    tlCtxt->atlSTAClients[STAid]->rssiAvg = *currentAvgRSSI;
 
