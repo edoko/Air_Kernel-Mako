@@ -1,24 +1,4 @@
 /*
- * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
-/*
  * Copyright (c) 2012, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
@@ -95,7 +75,7 @@ void sme_FTClose(tHalHandle hHal)
     if (pMac->ft.ftSmeContext.auth_ft_ies != NULL)
     {
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-        smsLog( pMac, LOGE, FL(" Freeing %p and setting to NULL"),
+        smsLog( pMac, LOGE, FL(" Freeing %p and setting to NULL\n"), 
             pMac->ft.ftSmeContext.auth_ft_ies);
 #endif
         vos_mem_free(pMac->ft.ftSmeContext.auth_ft_ies);
@@ -106,7 +86,7 @@ void sme_FTClose(tHalHandle hHal)
     if (pMac->ft.ftSmeContext.reassoc_ft_ies != NULL)
     {
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-        smsLog( pMac, LOGE, FL(" Freeing %p and setting to NULL"),
+        smsLog( pMac, LOGE, FL(" Freeing %p and setting to NULL\n"), 
             pMac->ft.ftSmeContext.reassoc_ft_ies);
 #endif
         vos_mem_free(pMac->ft.ftSmeContext.reassoc_ft_ies);
@@ -120,7 +100,7 @@ void sme_FTClose(tHalHandle hHal)
     if (pMac->ft.ftSmeContext.psavedFTPreAuthRsp != NULL)
     {
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-        smsLog( pMac, LOGE, FL("%s: Freeing %p and setting to NULL"),
+        smsLog( pMac, LOGE, FL("%s: Freeing %p and setting to NULL\n"), 
             pMac->ft.ftSmeContext.psavedFTPreAuthRsp);
 #endif
         vos_mem_free(pMac->ft.ftSmeContext.psavedFTPreAuthRsp);
@@ -136,7 +116,7 @@ void sme_FTClose(tHalHandle hHal)
   This function is called in SME. This fucntion packages and sends
   the FT IEs to PE.
   ------------------------------------------------------------------------*/
-void sme_SetFTIEs( tHalHandle hHal, tANI_U8 sessionId, const tANI_U8 *ft_ies,
+void sme_SetFTIEs( tHalHandle hHal, tANI_U8 sessionId, tANI_U8 *ft_ies, 
         tANI_U16 ft_ies_length )
 {
     tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
@@ -147,13 +127,13 @@ void sme_SetFTIEs( tHalHandle hHal, tANI_U8 sessionId, const tANI_U8 *ft_ies,
 
     if (ft_ies == NULL) 
     {
-        smsLog( pMac, LOGE, FL(" ft ies is NULL"));
+        smsLog( pMac, LOGE, FL(" ft ies is NULL\n"));
         sme_ReleaseGlobalLock( &pMac->sme );
         return; 
     }
 
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-    smsLog( pMac, LOGE, "FT IEs Req is received in state %d",
+    smsLog( pMac, LOGE, "FT IEs Req is received in state %d\n", 
         pMac->ft.ftSmeContext.FTState);
 #endif
 
@@ -175,7 +155,7 @@ void sme_SetFTIEs( tHalHandle hHal, tANI_U8 sessionId, const tANI_U8 *ft_ies,
             if(pMac->ft.ftSmeContext.auth_ft_ies == NULL)
             {
                smsLog( pMac, LOGE, FL("Memory allocation failed for "
-                                      "auth_ft_ies"));
+                                      "auth_ft_ies\n"));
                sme_ReleaseGlobalLock( &pMac->sme );
                return;
             }
@@ -186,7 +166,13 @@ void sme_SetFTIEs( tHalHandle hHal, tANI_U8 sessionId, const tANI_U8 *ft_ies,
             pMac->ft.ftSmeContext.FTState = eFT_AUTH_REQ_READY;
 
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-            smsLog( pMac, LOG1, "ft_ies_length=%d", ft_ies_length);
+            smsLog( pMac, LOGE, "ft_ies_length=%d\n", ft_ies_length);
+            /*
+            smsLog( pMac, LOGE, "%d: New Auth ft_ies_length=%02x%02x%02x\n", 
+                current->pid, pMac->ft.ftSmeContext.auth_ft_ies[0],
+                pMac->ft.ftSmeContext.auth_ft_ies[1],
+                pMac->ft.ftSmeContext.auth_ft_ies[2]);
+                */
 #endif
             break;
 
@@ -199,10 +185,10 @@ void sme_SetFTIEs( tHalHandle hHal, tANI_U8 sessionId, const tANI_U8 *ft_ies,
             // Delete the pre-auth node locally. Set your self back to restart pre-auth
             // TBD
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-            smsLog( pMac, LOGE,
-                "Pre-auth done and now receiving---> AUTH REQ <---- in state %d",
+            smsLog( pMac, LOGE, 
+                "Pre-auth done and now receiving---> AUTH REQ <---- in state %d\n", 
                 pMac->ft.ftSmeContext.FTState);
-            smsLog( pMac, LOGE, "Unhandled reception of FT IES in state %d",
+            smsLog( pMac, LOGE, "Unhandled reception of FT IES in state %d\n", 
                 pMac->ft.ftSmeContext.FTState);
 #endif
             break;
@@ -213,7 +199,7 @@ void sme_SetFTIEs( tHalHandle hHal, tANI_U8 sessionId, const tANI_U8 *ft_ies,
 
             // At this juncture we are ready to start sending Re-Assoc Req.
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-            smsLog( pMac, LOGE, "New Reassoc Req=%p in state %d",
+            smsLog( pMac, LOGE, "New Reassoc Req=%p in state %d\n", 
                 ft_ies, pMac->ft.ftSmeContext.FTState);
 #endif
             if ((pMac->ft.ftSmeContext.reassoc_ft_ies) && 
@@ -229,7 +215,7 @@ void sme_SetFTIEs( tHalHandle hHal, tANI_U8 sessionId, const tANI_U8 *ft_ies,
             if(pMac->ft.ftSmeContext.reassoc_ft_ies == NULL)
             {
                smsLog( pMac, LOGE, FL("Memory allocation failed for "
-                                      "reassoc_ft_ies"));
+                                      "reassoc_ft_ies\n"));
                sme_ReleaseGlobalLock( &pMac->sme );
                return;
             }
@@ -239,14 +225,20 @@ void sme_SetFTIEs( tHalHandle hHal, tANI_U8 sessionId, const tANI_U8 *ft_ies,
                 
             pMac->ft.ftSmeContext.FTState = eFT_SET_KEY_WAIT;
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-            smsLog( pMac, LOG1, "ft_ies_length=%d state=%d", ft_ies_length,
+            smsLog( pMac, LOGE, "ft_ies_length=%d state=%d\n", ft_ies_length,
                 pMac->ft.ftSmeContext.FTState);
+            /*
+            smsLog( pMac, LOGE, "%d: New Auth ft_ies_length=%02x%02x%02x\n", 
+                current->pid, pMac->ft.ftSmeContext.reassoc_ft_ies[0],
+                pMac->ft.ftSmeContext.reassoc_ft_ies[1],
+                pMac->ft.ftSmeContext.reassoc_ft_ies[2]);
+                */
 #endif
             
             break;
 
         default:
-            smsLog( pMac, LOGE, FL(" Unhandled state=%d"),
+            smsLog( pMac, LOGE, FL(" Unhandled state=%d\n"),
                 pMac->ft.ftSmeContext.FTState);
             break;
     }
@@ -266,10 +258,10 @@ eHalStatus sme_FTSendUpdateKeyInd(tHalHandle hHal, tCsrRoamSetKey * pFTKeyInfo)
     tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
     int i = 0;
 
-    smsLog(pMac, LOGE, FL("keyLength %d"), pFTKeyInfo->keyLength);
+    smsLog(pMac, LOGE, FL("keyLength %d\n"), pFTKeyInfo->keyLength);
 
       for(i=0; i<pFTKeyInfo->keyLength; i++)
-          smsLog(pMac, LOGE, FL("%02x"), pFTKeyInfo->Key[i]);
+          smsLog(pMac, LOGE, FL("%02x"), pFTKeyInfo->Key[i]); 
 
     msgLen  = sizeof( tANI_U16) + sizeof( tANI_U16 ) + 
        sizeof( pMsg->keyMaterial.length ) + sizeof( pMsg->keyMaterial.edType ) + 
@@ -333,7 +325,7 @@ eHalStatus sme_FTSendUpdateKeyInd(tHalHandle hHal, tCsrRoamSetKey * pFTKeyInfo)
         palCopyMemory( pMac->hHdd, p, pFTKeyInfo->Key, pFTKeyInfo->keyLength ); 
         if(pFTKeyInfo->keyLength == 16)
         {
-            smsLog(pMac, LOG1, "  SME Set keyIdx (%d) encType(%d) key = %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X",
+            smsLog(pMac, LOG1, "  SME Set keyIdx (%d) encType(%d) key = %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n",
             pFTKeyInfo->keyId, edType, pFTKeyInfo->Key[0], pFTKeyInfo->Key[1], pFTKeyInfo->Key[2], pFTKeyInfo->Key[3], pFTKeyInfo->Key[4],
             pFTKeyInfo->Key[5], pFTKeyInfo->Key[6], pFTKeyInfo->Key[7], pFTKeyInfo->Key[8],
             pFTKeyInfo->Key[9], pFTKeyInfo->Key[10], pFTKeyInfo->Key[11], pFTKeyInfo->Key[12], pFTKeyInfo->Key[13], pFTKeyInfo->Key[14], pFTKeyInfo->Key[15]);
@@ -356,15 +348,15 @@ eHalStatus sme_FTUpdateKey( tHalHandle hHal, tCsrRoamSetKey * pFTKeyInfo )
        return eHAL_STATUS_FAILURE;
     }
 
-    if (pFTKeyInfo == NULL)
+    if (pFTKeyInfo == NULL) 
     {
-        smsLog( pMac, LOGE, "%s: pFTKeyInfo is NULL", __func__);
+        smsLog( pMac, LOGE, "%s: pFTKeyInfo is NULL\n", __FUNCTION__);
         sme_ReleaseGlobalLock( &pMac->sme );
-        return eHAL_STATUS_FAILURE;
+        return eHAL_STATUS_FAILURE; 
     }
 
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-    smsLog( pMac, LOG1, "sme_FTUpdateKey is received in state %d",
+    smsLog( pMac, LOG1, "sme_FTUpdateKey is received in state %d", 
         pMac->ft.ftSmeContext.FTState);
 #endif
 
@@ -372,16 +364,12 @@ eHalStatus sme_FTUpdateKey( tHalHandle hHal, tCsrRoamSetKey * pFTKeyInfo )
     switch(pMac->ft.ftSmeContext.FTState)
     {
     case eFT_SET_KEY_WAIT:
-       status = eHAL_STATUS_FT_PREAUTH_KEY_WAIT;
+       status = sme_FTSendUpdateKeyInd( hHal, pFTKeyInfo );
        pMac->ft.ftSmeContext.FTState = eFT_START_READY;
-#ifdef WLAN_FEATURE_VOWIFI_11R_DEBUG
-       smsLog( pMac, LOG1, "%s: state changed to %d", __func__,
-               pMac->ft.ftSmeContext.FTState);
-#endif
        break;
           
     default:
-       smsLog( pMac, LOGE, "%s: Unhandled state=%d", __func__,
+       smsLog( pMac, LOGE, "%s: Unhandled state=%d\n", __FUNCTION__,
                pMac->ft.ftSmeContext.FTState);
        status = eHAL_STATUS_FAILURE;
        break;
@@ -432,7 +420,7 @@ void sme_GetFTPreAuthResponse( tHalHandle hHal, tANI_U8 *ft_ies,
     pMac->ft.ftSmeContext.FTState = eFT_REASSOC_REQ_WAIT;
 
 #ifdef WLAN_FEATURE_VOWIFI_11R_DEBUG
-    smsLog( pMac, LOGE, FL(" Filled auth resp = %d"), *ft_ies_length);
+    smsLog( pMac, LOGE, FL(" Filled auth resp = %d\n"), *ft_ies_length);
 #endif
     sme_ReleaseGlobalLock( &pMac->sme );
     return;
@@ -471,7 +459,7 @@ void sme_GetRICIEs( tHalHandle hHal, tANI_U8 *ric_ies, tANI_U32 ric_ies_ip_len,
     *ric_ies_length = pMac->ft.ftSmeContext.psavedFTPreAuthRsp->ric_ies_length;
 
 #ifdef WLAN_FEATURE_VOWIFI_11R_DEBUG
-    smsLog( pMac, LOGE, FL(" Filled ric ies = %d"), *ric_ies_length);
+    smsLog( pMac, LOGE, FL(" Filled ric ies = %d\n"), *ric_ies_length);
 #endif
 
     sme_ReleaseGlobalLock( &pMac->sme );

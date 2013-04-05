@@ -1,24 +1,4 @@
 /*
- * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
-/*
  * Copyright (c) 2012, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
@@ -54,7 +34,14 @@
  */
 
 #include "wniApi.h"
+#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
+#include "halDataStruct.h"
+#endif
+#if (WNI_POLARIS_FW_PRODUCT == AP)
+#include "wniCfgAp.h"
+#else
 #include "wniCfgSta.h"
+#endif
 #include "aniGlobal.h"
 #include "cfgApi.h"
 
@@ -170,8 +157,10 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
     tANI_U8                 *pChallenge;
     tANI_U32                key_length=8;
     tANI_U8                 challengeTextArray[SIR_MAC_AUTH_CHALLENGE_LENGTH];
+#ifdef WLAN_SOFTAP_FEATURE
     tpDphHashNode           pStaDs = NULL;
     tANI_U16                assocId = 0;
+#endif
     /* Added For BT -AMP support */
     // Get pointer to Authentication frame header and body
  
@@ -201,22 +190,11 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
         return;
     }
 
-    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_DEBUG,
-              FL("Auth Frame Received: BSSID %02x:%02x:%02x:%02x:%02x:%02x (Rssi %d)"),
-              pHdr->bssId[0], pHdr->bssId[1], pHdr->bssId[2],
-              pHdr->bssId[3], pHdr->bssId[4], pHdr->bssId[5],
-              (uint)abs((tANI_S8)WDA_GET_RX_RSSI_DB(pRxPacketInfo)));
-
     pBody = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
 
     //PELOG3(sirDumpBuf(pMac, SIR_LIM_MODULE_ID, LOG3, (tANI_U8*)pBd, ((tpHalBufDesc) pBd)->mpduDataOffset + frameLen);)
 
-    //Restore default failure timeout
-    if (VOS_P2P_CLIENT_MODE == psessionEntry->pePersona && psessionEntry->defaultAuthFailureTimeout)
-    {
-        ccmCfgSetInt(pMac,WNI_CFG_AUTHENTICATE_FAILURE_TIMEOUT ,
-                          psessionEntry->defaultAuthFailureTimeout, NULL, eANI_BOOLEAN_FALSE);
-    }
+
    
     /// Determine if WEP bit is set in the FC or received MAC header
     if (pHdr->fc.wep)
@@ -225,6 +203,7 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
          * WEP bit is set in FC of MAC header.
          */
 
+#ifdef WLAN_SOFTAP_FEATURE
         // If TKIP counter measures enabled issue Deauth frame to station
         if ((psessionEntry->bTkipCntrMeasActive) && (psessionEntry->limSystemRole == eLIM_AP_ROLE))
         {
@@ -233,9 +212,10 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
             limPrintMacAddr(pMac, pHdr->sa, LOGE);
 
             limSendDeauthMgmtFrame( pMac, eSIR_MAC_MIC_FAILURE_REASON,
-                                    pHdr->sa, psessionEntry, FALSE );
+                                    pHdr->sa, psessionEntry );
             return;
         }
+#endif
 
         // Extract key ID from IV (most 2 bits of 4th byte of IV)
 
@@ -277,11 +257,13 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
 
             return;
         }
+#ifdef WLAN_SOFTAP_FEATURE
         if(psessionEntry->limSystemRole == eLIM_AP_ROLE)
         {
             val = psessionEntry->privacy; 
         } 
         else 
+#endif
         // Accept Authentication frame only if Privacy is implemented
         if (wlan_cfgGetInt(pMac, WNI_CFG_PRIVACY_ENABLED,
                       &val) != eSIR_SUCCESS)
@@ -443,6 +425,7 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
 
                 val = SIR_MAC_KEY_LENGTH;
 
+#ifdef WLAN_SOFTAP_FEATURE  
                 if(psessionEntry->limSystemRole == eLIM_AP_ROLE)
                 {   
                     tpSirKeys pKey;
@@ -451,6 +434,7 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                     val = pKey->keyLength;
                 }                   
                 else                              
+#endif                                    
                 if (wlan_cfgGetStr(pMac, (tANI_U16) (WNI_CFG_WEP_DEFAULT_KEY_1 + keyId),
                               defaultKey, &val) != eSIR_SUCCESS)
                 {
@@ -563,45 +547,6 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
     {
         case SIR_MAC_AUTH_FRAME_1:
             // AuthFrame 1
-            
-            pStaDs = dphLookupHashEntry(pMac, pHdr->sa,
-                    &assocId, &psessionEntry->dph.dphHashTable);
-            if (pStaDs)
-            {
-                tLimMlmDisassocReq       *pMlmDisassocReq = NULL;
-                tLimMlmDeauthReq        *pMlmDeauthReq = NULL;
-                pMlmDisassocReq = pMac->lim.limDisassocDeauthCnfReq.pMlmDisassocReq;
-                if (pMlmDisassocReq &&
-                        (palEqualMemory( pMac->hHdd,(tANI_U8 *) pHdr->sa,
-                                         (tANI_U8 *) &pMlmDisassocReq->peerMacAddr,
-                                         sizeof(tSirMacAddr))))
-                {
-                    PELOGE(limLog(pMac, LOGP, FL("\nTODO:Ack for disassoc frame is pending"
-                                    "Issue delsta for %02x:%02x:%02x:%02x:%02x:%02x"),
-                                pMlmDisassocReq->peerMacAddr[0],
-                                pMlmDisassocReq->peerMacAddr[1],
-                                pMlmDisassocReq->peerMacAddr[2],
-                                pMlmDisassocReq->peerMacAddr[3],
-                                pMlmDisassocReq->peerMacAddr[4],
-                                pMlmDisassocReq->peerMacAddr[5]);)
-                }
-                pMlmDeauthReq = pMac->lim.limDisassocDeauthCnfReq.pMlmDeauthReq;
-                if (pMlmDeauthReq &&
-                        (palEqualMemory( pMac->hHdd,(tANI_U8 *) pHdr->sa,
-                                         (tANI_U8 *) &pMlmDeauthReq->peerMacAddr,
-                                         sizeof(tSirMacAddr))))
-                {
-                    PELOGE(limLog(pMac, LOGP, FL("\nTODO:Ack for disassoc frame is pending"
-                                    "Issue delsta for %02x:%02x:%02x:%02x:%02x:%02x"),
-                                pMlmDeauthReq->peerMacAddr[0],
-                                pMlmDeauthReq->peerMacAddr[1],
-                                pMlmDeauthReq->peerMacAddr[2],
-                                pMlmDeauthReq->peerMacAddr[3],
-                                pMlmDeauthReq->peerMacAddr[4],
-                                pMlmDeauthReq->peerMacAddr[5]
-                                );)
-                }
-            }
 
             /// Check if there exists pre-auth context for this STA
             pAuthNode = limSearchPreAuthList(pMac, pHdr->sa);
@@ -625,6 +570,7 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                     PELOGE(limLog(pMac, LOGE, FL("STA is initiating brand-new Authentication ...\n"));)
                     limDeletePreAuthNode(pMac,
                                          pHdr->sa);
+#ifdef WLAN_SOFTAP_FEATURE                    
                     /**
                      *  SAP Mode:Disassociate the station and 
                      *  delete its entry if we have its entry 
@@ -651,10 +597,11 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                     {
                         PELOGE(limLog(pMac, LOGE, FL("lim Delete Station Context (staId: %d, assocId: %d) \n"),pStaDs->staIndex, assocId);)
                         limSendDeauthMgmtFrame(pMac,
-                               eSIR_MAC_UNSPEC_FAILURE_REASON, (tANI_U8 *) pAuthNode->peerMacAddr, psessionEntry, FALSE);
+                               eSIR_MAC_UNSPEC_FAILURE_REASON, (tANI_U8 *) pAuthNode->peerMacAddr,psessionEntry);
                         limTriggerSTAdeletion(pMac, pStaDs, psessionEntry);
                         return;
                     }
+#endif
                 }
                 else
                 {
@@ -677,6 +624,10 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                 limLog(pMac, LOGP,
                        FL("could not retrieve MaxNumPreAuth\n"));
             }
+#ifdef ANI_AP_SDK_OPT
+            if(maxNumPreAuth > SIR_SDK_OPT_MAX_NUM_PRE_AUTH)
+                maxNumPreAuth = SIR_SDK_OPT_MAX_NUM_PRE_AUTH;
+#endif // ANI_AP_SDK_OPT
             if (pMac->lim.gLimNumPreAuthContexts == maxNumPreAuth)
             {
                 /**
@@ -698,10 +649,18 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                 return;
             }
             /// No Pre-auth context exists for the STA.
+#ifdef WLAN_SOFTAP_FEATURE
             if (limIsAuthAlgoSupported(
                                       pMac,
                                       (tAniAuthType)
                                       pRxAuthFrameBody->authAlgoNumber, psessionEntry))
+#else
+            if (limIsAuthAlgoSupported(
+                                      pMac,
+                                      (tAniAuthType)
+                                      pRxAuthFrameBody->authAlgoNumber))
+
+#endif
             {
                 switch (pRxAuthFrameBody->authAlgoNumber)
                 {
@@ -767,11 +726,13 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
 
                     case eSIR_SHARED_KEY:
                         PELOGW(limLog(pMac, LOGW, FL("=======> eSIR_SHARED_KEY  ...\n"));)
+#ifdef WLAN_SOFTAP_FEATURE
                         if(psessionEntry->limSystemRole == eLIM_AP_ROLE)
                         {
                             val = psessionEntry->privacy;
                         }
                         else   
+#endif
                         if (wlan_cfgGetInt(pMac, WNI_CFG_PRIVACY_ENABLED,
                                       &val) != eSIR_SUCCESS)
                         {
@@ -1087,11 +1048,13 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                 {
                     // Shared key authentication
 
+#ifdef WLAN_SOFTAP_FEATURE
                     if(psessionEntry->limSystemRole == eLIM_AP_ROLE)
                     {
                         val = psessionEntry->privacy;
                     }
                     else   
+#endif
                     if (wlan_cfgGetInt(pMac, WNI_CFG_PRIVACY_ENABLED,
                                   &val) != eSIR_SUCCESS)
                     {
@@ -1224,6 +1187,7 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
 
                             val = SIR_MAC_KEY_LENGTH;
 
+#ifdef WLAN_SOFTAP_FEATURE  
                             if(psessionEntry->limSystemRole == eLIM_AP_ROLE)
                             {
                                 tpSirKeys pKey;
@@ -1231,6 +1195,7 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                                 palCopyMemory( pMac->hHdd, defaultKey, pKey->key, pKey->keyLength);
                             }
                             else
+#endif
                             if (wlan_cfgGetStr(pMac, (tANI_U16) (WNI_CFG_WEP_DEFAULT_KEY_1 + keyId),
                                           defaultKey,
                                           &val)
@@ -1466,7 +1431,7 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                      */
                     authFrame.authAlgoNumber = eSIR_SHARED_KEY;
                     authFrame.authTransactionSeqNumber =
-                        SIR_MAC_AUTH_FRAME_4;
+                    SIR_MAC_AUTH_FRAME_4;
                     authFrame.authStatusCode = eSIR_MAC_SUCCESS_STATUS;
 
                     limSendAuthMgmtFrame(pMac, &authFrame,
@@ -1498,20 +1463,20 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                      */
 
                     authFrame.authAlgoNumber =
-                        pRxAuthFrameBody->authAlgoNumber;
+                    pRxAuthFrameBody->authAlgoNumber;
                     authFrame.authTransactionSeqNumber =
-                        SIR_MAC_AUTH_FRAME_4;
+                    SIR_MAC_AUTH_FRAME_4;
                     authFrame.authStatusCode =
-                        eSIR_MAC_CHALLENGE_FAILURE_STATUS;
+                    eSIR_MAC_CHALLENGE_FAILURE_STATUS;
 
                     limSendAuthMgmtFrame(pMac, &authFrame,
                                          pHdr->sa,
                                          LIM_NO_WEP_IN_FC,psessionEntry);
 
                     // Log error
-                    PELOGE( limLog(pMac, LOGW,
-                                   FL("Challenge failure for peer "MAC_ADDRESS_STR), 
-                                   MAC_ADDR_ARRAY(pHdr->sa));)
+                   PELOGE( limLog(pMac, LOGW,
+                           FL("Challenge failure for peer "MAC_ADDRESS_STR), 
+						   MAC_ADDR_ARRAY(pHdr->sa));)
                     return;
                 }
             } // if (pMac->lim.gLimSystemRole == eLIM_AP_ROLE || ...
@@ -1670,7 +1635,7 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
  * is received we will have a session in progress. !!!!!
  *----------------------------------------------------------------------
  */
-tSirRetStatus limProcessAuthFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd, void *body)
+int limProcessAuthFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd, void *body)
 {
     tpSirMacMgmtHdr pHdr;
     tpPESession psessionEntry = NULL;
@@ -1678,17 +1643,11 @@ tSirRetStatus limProcessAuthFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd, vo
     tANI_U16  frameLen;
     tSirMacAuthFrameBody rxAuthFrame;
     tSirMacAuthFrameBody *pRxAuthFrameBody = NULL;
-    tSirRetStatus ret_status = eSIR_FAILURE;
+    int ret_status = eSIR_FAILURE;
 
     pHdr = WDA_GET_RX_MAC_HEADER(pBd);
     pBody = WDA_GET_RX_MPDU_DATA(pBd);
     frameLen = WDA_GET_RX_PAYLOAD_LEN(pBd);
-
-    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_DEBUG,
-              FL("Auth Frame Received: BSSID %02x:%02x:%02x:%02x:%02x:%02x (Rssi %d)"),
-              pHdr->bssId[0], pHdr->bssId[1], pHdr->bssId[2],
-              pHdr->bssId[3], pHdr->bssId[4], pHdr->bssId[5],
-              (uint)abs((tANI_S8)WDA_GET_RX_RSSI_DB(pBd)));
 
     // Check for the operating channel and see what needs to be done next.
     psessionEntry = pMac->ft.ftPEContext.psavedsessionEntry;
@@ -1709,8 +1668,8 @@ tSirRetStatus limProcessAuthFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd, vo
         return eSIR_FAILURE;
     }
 #ifdef WLAN_FEATURE_VOWIFI_11R_DEBUG
-    limPrintMacAddr(pMac, pHdr->bssId, LOG2);
-    limPrintMacAddr(pMac, pMac->ft.ftPEContext.pFTPreAuthReq->preAuthbssId, LOG2);
+    limPrintMacAddr(pMac, pHdr->bssId, LOGE);
+    limPrintMacAddr(pMac, pMac->ft.ftPEContext.pFTPreAuthReq->preAuthbssId, LOGE);
     limLog(pMac,LOG2,FL("seqControl 0x%X\n"), 
             ((pHdr->seqControl.seqNumHi << 8) | 
             (pHdr->seqControl.seqNumLo << 4) |
@@ -1746,23 +1705,23 @@ tSirRetStatus limProcessAuthFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd, vo
          * as this was indeed a response from the BSSID we tried to 
          * pre-auth.
          */
-        PELOGE(limLog(pMac,LOG1,"Auth rsp already posted to SME"
-               " (session %p, FT session %p)", psessionEntry,
+        PELOGE(limLog(pMac,LOGE,"Auth rsp already posted to SME"
+               " (session %p, FT session %p)\n", psessionEntry,
                pMac->ft.ftPEContext.pftSessionEntry););
         return eSIR_SUCCESS;
     }
     else
     {
-        PELOGE(limLog(pMac,LOGW,"Auth rsp not yet posted to SME"
-               " (session %p, FT session %p)", psessionEntry,
+        PELOGE(limLog(pMac,LOGE,"Auth rsp not yet posted to SME"
+               " (session %p, FT session %p)\n", psessionEntry,
                pMac->ft.ftPEContext.pftSessionEntry););
         pMac->ft.ftPEContext.pFTPreAuthReq->bPreAuthRspProcessed =
             eANI_BOOLEAN_TRUE;
     }
 
 #ifdef WLAN_FEATURE_VOWIFI_11R_DEBUG
-    limLog(pMac, LOG1, FL("Pre-Auth response received from neighbor"));
-    limLog(pMac, LOG1, FL("Pre-Auth done state"));
+    limLog(pMac, LOGE, FL("Pre-Auth response received from neighbor"));
+    limLog(pMac, LOGE, FL("Pre-Auth done state"));
 #endif
     // Stopping timer now, that we have our unicast from the AP
     // of our choice.
@@ -1778,8 +1737,8 @@ tSirRetStatus limProcessAuthFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd, vo
     pRxAuthFrameBody = &rxAuthFrame;
 
 #ifdef WLAN_FEATURE_VOWIFI_11R_DEBUG
-    PELOGE(limLog(pMac, LOG1,
-           FL("Received Auth frame with type=%d seqnum=%d, status=%d (%d)"),
+    PELOGE(limLog(pMac, LOGE,
+           FL("Received Auth frame with type=%d seqnum=%d, status=%d (%d)\n"),
            (tANI_U32) pRxAuthFrameBody->authAlgoNumber,
            (tANI_U32) pRxAuthFrameBody->authTransactionSeqNumber,
            (tANI_U32) pRxAuthFrameBody->authStatusCode,(tANI_U32)pMac->lim.gLimNumPreAuthContexts);)
@@ -1791,11 +1750,9 @@ tSirRetStatus limProcessAuthFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd, vo
             if (pRxAuthFrameBody->authStatusCode != eSIR_MAC_SUCCESS_STATUS)
             {
 #ifdef WLAN_FEATURE_VOWIFI_11R_DEBUG
-                PELOGE(limLog( pMac, LOGE, "Auth status code received is %d",
-                    (tANI_U32) pRxAuthFrameBody->authStatusCode););
+                PELOGE(limLog( pMac, LOGE, "Auth status code received is  %d\n", 
+                    (tANI_U32) pRxAuthFrameBody->authStatusCode);)
 #endif
-                if (eSIR_MAC_MAX_ASSOC_STA_REACHED_STATUS == pRxAuthFrameBody->authStatusCode)
-                    ret_status = eSIR_LIM_MAX_STA_REACHED_ERROR;
             }
             else 
             {
