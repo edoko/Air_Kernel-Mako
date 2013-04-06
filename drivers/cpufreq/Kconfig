@@ -150,6 +150,12 @@ config CPU_FREQ_DEFAULT_GOV_DANCEDANCE
 	bool "dancedance"
 	select CPU_FREQ_GOV_DANCEDANCE
 
+config CPU_FREQ_DEFAULT_GOV_SMARTASS2
+	bool "smartass2"
+	select CPU_FREQ_GOV_SMARTASS2
+	---help---
+	  Use the CPUFreq governor 'smartassV2' as default.
+
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
@@ -335,6 +341,12 @@ config CPU_FREQ_GOV_NIGHTMARE
 config CPU_FREQ_GOV_DANCEDANCE
 	tristate "'dancedance' cpufreq governor"
 	depends on CPU_FREQ
+
+config CPU_FREQ_GOV_SMARTASS2
+	tristate "'smartassV2' cpufreq governor"
+	depends on CPU_FREQ
+	---help---
+	  'smartassV2' - a "smart" governor
 
 menu "x86 CPU frequency scaling drivers"
 depends on X86
