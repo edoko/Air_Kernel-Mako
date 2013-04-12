@@ -16,7 +16,6 @@
 #include <linux/err.h>
 #include <linux/platform_device.h>
 #include <linux/sched.h>
-#include <linux/ratelimit.h>
 #include <linux/workqueue.h>
 #include <linux/pm_runtime.h>
 #include <linux/diagchar.h>
@@ -311,27 +310,21 @@ int diag_device_write(void *buf, int proc_num, struct diag_request *write_ptr)
 
 #ifdef CONFIG_DIAG_BRIDGE_CODE
 		else if (proc_num == HSIC_DATA) {
-			unsigned long flags;
-			int foundIndex = -1;
-
-			spin_lock_irqsave(&driver->hsic_spinlock, flags);
 			for (i = 0; i < driver->poolsize_hsic_write; i++) {
 				if (driver->hsic_buf_tbl[i].length == 0) {
 					driver->hsic_buf_tbl[i].buf = buf;
 					driver->hsic_buf_tbl[i].length =
 							driver->write_len_mdm;
 					driver->num_hsic_buf_tbl_entries++;
-					foundIndex = i;
+#ifdef DIAG_DEBUG
+					pr_debug("diag: ENQUEUE HSIC buf ptr and length is %x , %d\n",
+						(unsigned int)
+						(driver->hsic_buf_tbl[i].buf),
+						driver->hsic_buf_tbl[i].length);
+#endif
 					break;
 				}
 			}
-			spin_unlock_irqrestore(&driver->hsic_spinlock, flags);
-			if (foundIndex == -1)
-				err = -1;
-			else
-				pr_debug("diag: ENQUEUE HSIC buf ptr and length is %x , %d\n",
-					(unsigned int)buf,
-					driver->write_len_mdm);
 		}
 #endif
 		for (i = 0; i < driver->num_clients; i++)
@@ -437,8 +430,7 @@ int diag_device_write(void *buf, int proc_num, struct diag_request *write_ptr)
 						diagmem_free(driver,
 							write_ptr_mdm,
 							POOL_TYPE_HSIC_WRITE);
-						pr_err_ratelimited("diag: HSIC write failure, err: %d\n",
-							err);
+					pr_err("diag: HSIC write failure\n");
 					}
 				} else {
 					pr_err("diag: allocate write fail\n");

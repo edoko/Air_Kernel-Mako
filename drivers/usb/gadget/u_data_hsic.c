@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2013, Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2012, Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -220,7 +220,6 @@ static void ghsic_data_write_tohost(struct work_struct *w)
 		req->context = skb;
 		req->buf = skb->data;
 		req->length = skb->len;
-		req->zero = 1;
 
 		port->n_tx_req_queued++;
 		if (port->n_tx_req_queued == ghsic_data_tx_intr_thld) {
@@ -634,10 +633,10 @@ static int ghsic_data_remove(struct platform_device *pdev)
 
 	ghsic_data_free_buffers(port);
 
-	cancel_work_sync(&port->connect_w);
-	if (test_and_clear_bit(CH_OPENED, &port->bridge_sts))
-		data_bridge_close(port->brdg.ch_id);
+	data_bridge_close(port->brdg.ch_id);
+
 	clear_bit(CH_READY, &port->bridge_sts);
+	clear_bit(CH_OPENED, &port->bridge_sts);
 
 	return 0;
 }
@@ -729,15 +728,11 @@ void ghsic_data_disconnect(void *gptr, int port_num)
 	ghsic_data_free_buffers(port);
 
 	/* disable endpoints */
-	if (port->in) {
-		usb_ep_disable(port->in);
-		port->in->driver_data = NULL;
-	}
-
-	if (port->out) {
+	if (port->in)
 		usb_ep_disable(port->out);
-		port->out->driver_data = NULL;
-	}
+
+	if (port->out)
+		usb_ep_disable(port->in);
 
 	atomic_set(&port->connected, 0);
 

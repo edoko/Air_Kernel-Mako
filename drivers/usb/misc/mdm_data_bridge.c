@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2013, Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2012, Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -361,9 +361,6 @@ void data_bridge_close(unsigned int id)
 		return;
 
 	dev_dbg(&dev->intf->dev, "%s:\n", __func__);
-
-	cancel_work_sync(&dev->kevent);
-	cancel_work_sync(&dev->process_rx_w);
 
 	usb_unlink_anchored_urbs(&dev->tx_active);
 	usb_unlink_anchored_urbs(&dev->rx_active);
@@ -1028,6 +1025,9 @@ static void bridge_disconnect(struct usb_interface *intf)
 	usb_set_intfdata(intf, NULL);
 	__dev[chid] = NULL;
 
+	cancel_work_sync(&dev->process_rx_w);
+	cancel_work_sync(&dev->kevent);
+
 	/*free rx urbs*/
 	head = &dev->rx_idle;
 	spin_lock_irqsave(&dev->rx_done.lock, flags);
@@ -1049,7 +1049,6 @@ static void bridge_disconnect(struct usb_interface *intf)
 #define PID9034_IFACE_MASK	0xC
 #define PID9048_IFACE_MASK	0x18
 #define PID904C_IFACE_MASK	0x28
-#define PID9075_IFACE_MASK	0x28
 
 static const struct usb_device_id bridge_ids[] = {
 	{ USB_DEVICE(0x5c6, 0x9001),
@@ -1063,9 +1062,6 @@ static const struct usb_device_id bridge_ids[] = {
 	},
 	{ USB_DEVICE(0x5c6, 0x904c),
 	.driver_info = PID904C_IFACE_MASK,
-	},
-	{ USB_DEVICE(0x5c6, 0x9075),
-	.driver_info = PID9075_IFACE_MASK,
 	},
 
 	{ } /* Terminating entry */
