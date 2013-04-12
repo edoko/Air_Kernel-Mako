@@ -16,7 +16,6 @@
 #include <linux/err.h>
 #include <linux/platform_device.h>
 #include <linux/sched.h>
-#include <linux/ratelimit.h>
 #include <linux/workqueue.h>
 #include <linux/pm_runtime.h>
 #include <linux/diagchar.h>
@@ -437,8 +436,7 @@ int diag_device_write(void *buf, int proc_num, struct diag_request *write_ptr)
 						diagmem_free(driver,
 							write_ptr_mdm,
 							POOL_TYPE_HSIC_WRITE);
-						pr_err_ratelimited("diag: HSIC write failure, err: %d\n",
-							err);
+					pr_err("diag: HSIC write failure\n");
 					}
 				} else {
 					pr_err("diag: allocate write fail\n");
