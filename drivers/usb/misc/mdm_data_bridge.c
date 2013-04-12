@@ -1049,7 +1049,6 @@ static void bridge_disconnect(struct usb_interface *intf)
 #define PID9034_IFACE_MASK	0xC
 #define PID9048_IFACE_MASK	0x18
 #define PID904C_IFACE_MASK	0x28
-#define PID9075_IFACE_MASK	0x28
 
 static const struct usb_device_id bridge_ids[] = {
 	{ USB_DEVICE(0x5c6, 0x9001),
@@ -1063,9 +1062,6 @@ static const struct usb_device_id bridge_ids[] = {
 	},
 	{ USB_DEVICE(0x5c6, 0x904c),
 	.driver_info = PID904C_IFACE_MASK,
-	},
-	{ USB_DEVICE(0x5c6, 0x9075),
-	.driver_info = PID9075_IFACE_MASK,
 	},
 
 	{ } /* Terminating entry */
