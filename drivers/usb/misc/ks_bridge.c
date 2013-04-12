@@ -262,8 +262,6 @@ static void ksb_tomdm_work(struct work_struct *w)
 			return;
 		}
 
-		usb_free_urb(urb);
-
 		spin_lock_irqsave(&ksb->lock, flags);
 	}
 	spin_unlock_irqrestore(&ksb->lock, flags);
