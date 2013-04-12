@@ -26,17 +26,13 @@ void diag_smux_event(void *priv, int event_type, const void *metadata)
 
 	switch (event_type) {
 	case SMUX_CONNECTED:
-		pr_info("diag: SMUX_CONNECTED received\n");
-		driver->smux_connected = 1;
+		pr_debug("diag: SMUX_CONNECTED received\n");
 		driver->in_busy_smux = 0;
 		/* read data from USB MDM channel & Initiate first write */
 		queue_work(driver->diag_bridge_wq,
 				 &(driver->diag_read_mdm_work));
 		break;
 	case SMUX_DISCONNECTED:
-		driver->smux_connected = 0;
-		driver->lcid = LCID_INVALID;
-		msm_smux_close(LCID_VALID);
 		pr_info("diag: SMUX_DISCONNECTED received\n");
 		break;
 	case SMUX_WRITE_DONE:
@@ -116,7 +112,6 @@ int diagfwd_connect_smux(void)
 			pr_info("diag: open SMUX ch, r = %d\n", ret);
 		} else {
 			pr_err("diag: failed to open SMUX ch, r = %d\n", ret);
-			return ret;
 		}
 	}
 	/* Poll USB channel to check for data*/
@@ -151,20 +146,8 @@ err:
 	return ret;
 }
 
-static int diagfwd_smux_remove(struct platform_device *pdev)
-{
-	driver->lcid = LCID_INVALID;
-	driver->smux_connected = 0;
-	driver->diag_smux_enabled = 0;
-	driver->in_busy_smux = 1;
-	kfree(driver->buf_in_smux);
-	driver->buf_in_smux = NULL;
-	return 0;
-}
-
 struct platform_driver msm_diagfwd_smux_driver = {
 	.probe = diagfwd_smux_probe,
-	.remove = diagfwd_smux_remove,
 	.driver = {
 		   .name = "SMUX_DIAG",
 		   .owner = THIS_MODULE,
