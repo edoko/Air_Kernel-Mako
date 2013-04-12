@@ -729,15 +729,11 @@ void ghsic_data_disconnect(void *gptr, int port_num)
 	ghsic_data_free_buffers(port);
 
 	/* disable endpoints */
-	if (port->in) {
-		usb_ep_disable(port->in);
-		port->in->driver_data = NULL;
-	}
-
-	if (port->out) {
+	if (port->in)
 		usb_ep_disable(port->out);
-		port->out->driver_data = NULL;
-	}
+
+	if (port->out)
+		usb_ep_disable(port->in);
 
 	atomic_set(&port->connected, 0);
 
