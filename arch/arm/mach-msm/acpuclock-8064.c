@@ -46,7 +46,7 @@ static struct scalable scalable[] __initdata = {
 		.aux_clk_sel = 3,
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x4501,
-#ifdef MSM_CPU_UNDER_AND_OVER_CLOCK
+#ifdef CONFIG_MSM_CPU_UNDER_AND_OVER_CLOCK
 		.vreg[VREG_CORE] = { "krait0", 1400000 },
 #else
 		.vreg[VREG_CORE] = { "krait0", 1300000 },
@@ -61,7 +61,7 @@ static struct scalable scalable[] __initdata = {
 		.aux_clk_sel = 3,
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x5501,
-#ifdef MSM_CPU_UNDER_AND_OVER_CLOCK
+#ifdef CONFIG_MSM_CPU_UNDER_AND_OVER_CLOCK
 		.vreg[VREG_CORE] = { "krait1", 1400000 },
 #else
 		.vreg[VREG_CORE] = { "krait1", 1300000 },
@@ -76,7 +76,7 @@ static struct scalable scalable[] __initdata = {
 		.aux_clk_sel = 3,
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x6501,
-#ifdef MSM_CPU_UNDER_AND_OVER_CLOCK
+#ifdef CONFIG_MSM_CPU_UNDER_AND_OVER_CLOCK
 		.vreg[VREG_CORE] = { "krait2", 1400000 },
 #else
 		.vreg[VREG_CORE] = { "krait2", 1300000 },
@@ -91,7 +91,7 @@ static struct scalable scalable[] __initdata = {
 		.aux_clk_sel = 3,
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x7501,
-#ifdef MSM_CPU_UNDER_AND_OVER_CLOCK
+#ifdef CONFIG_MSM_CPU_UNDER_AND_OVER_CLOCK
 		.vreg[VREG_CORE] = { "krait3", 1400000 },
 #else
 		.vreg[VREG_CORE] = { "krait3", 1300000 },
@@ -127,7 +127,7 @@ static struct msm_bus_scale_pdata bus_scale_data __initdata = {
 };
 
 static struct l2_level l2_freq_tbl[] __initdata = {
-#ifdef MSM_CPU_UNDER_AND_OVER_CLOCK
+#ifdef CONFIG_MSM_CPU_UNDER_AND_OVER_CLOCK
 	[0]  = { {  256000, PLL_8, 0, 0x1E },  950000, 1050000, 1 },
 	[1]  = { {  384000, HFPLL, 0, 0x00 },  950000, 1050000, 1 },
 //	[1]  = { {  432000, HFPLL, 2, 0x20 }, 1050000, 1050000, 2 },
@@ -167,7 +167,7 @@ static struct l2_level l2_freq_tbl[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_slow[] __initdata = {
-#ifdef MSM_CPU_UNDER_AND_OVER_CLOCK
+#ifdef CONFIG_MSM_CPU_UNDER_AND_OVER_CLOCK
 	{ 1, {   256000, PLL_8, 0, 0x1E }, L2(0),   900000 },
 	{ 1, {   384000, HFPLL, 0, 0x00 }, L2(0),   925000 },
 //	{ 0, {   432000, HFPLL, 2, 0x20 }, L2(5),   950000 },
@@ -221,7 +221,7 @@ static struct acpu_level acpu_freq_tbl_slow[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_nom[] __initdata = {
-#ifdef MSM_CPU_UNDER_AND_OVER_CLOCK
+#ifdef CONFIG_MSM_CPU_UNDER_AND_OVER_CLOCK
 	{ 1, {   256000, PLL_8, 0, 0x1E }, L2(0),   850000 },
 	{ 1, {   384000, HFPLL, 0, 0x00 }, L2(0),   875000 },
 //	{ 0, {   432000, HFPLL, 2, 0x20 }, L2(5),   900000 },
@@ -275,7 +275,7 @@ static struct acpu_level acpu_freq_tbl_nom[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_fast[] __initdata = {
-#ifdef MSM_CPU_UNDER_AND_OVER_CLOCK
+#ifdef CONFIG_MSM_CPU_UNDER_AND_OVER_CLOCK
 	{ 1, {   256000, PLL_8, 0, 0x1E }, L2(0),   800000 },
 	{ 1, {   384000, HFPLL, 0, 0x00 }, L2(0),   825000 },
 //	{ 0, {   432000, HFPLL, 2, 0x20 }, L2(5),   850000 },
