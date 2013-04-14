@@ -47,6 +47,7 @@ build.sh
 /Module.symvers
 mkboot/
 scripts/
+arch/arm/configs/air_b_defconfig
 
 #
 # Debian directory (make deb-pkg)

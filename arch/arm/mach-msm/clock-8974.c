@@ -674,7 +674,6 @@ static struct pll_vote_clk gpll0_clk_src = {
 		.rate = 600000000,
 		.dbg_name = "gpll0_clk_src",
 		.ops = &clk_ops_pll_vote,
-		.warned = true,
 		CLK_INIT(gpll0_clk_src.c),
 	},
 };
@@ -690,7 +689,6 @@ static struct pll_vote_clk gpll1_clk_src = {
 		.rate = 480000000,
 		.dbg_name = "gpll1_clk_src",
 		.ops = &clk_ops_pll_vote,
-		.warned = true,
 		CLK_INIT(gpll1_clk_src.c),
 	},
 };
@@ -706,7 +704,6 @@ static struct pll_vote_clk lpapll0_clk_src = {
 		.rate = 491520000,
 		.dbg_name = "lpapll0_clk_src",
 		.ops = &clk_ops_pll_vote,
-		.warned = true,
 		CLK_INIT(lpapll0_clk_src.c),
 	},
 };
@@ -722,7 +719,6 @@ static struct pll_vote_clk mmpll0_clk_src = {
 		.dbg_name = "mmpll0_clk_src",
 		.rate = 800000000,
 		.ops = &clk_ops_pll_vote,
-		.warned = true,
 		CLK_INIT(mmpll0_clk_src.c),
 	},
 };
@@ -738,7 +734,6 @@ static struct pll_vote_clk mmpll1_clk_src = {
 		.dbg_name = "mmpll1_clk_src",
 		.rate = 846000000,
 		.ops = &clk_ops_pll_vote,
-		.warned = true,
 		CLK_INIT(mmpll1_clk_src.c),
 	},
 };
@@ -752,7 +747,6 @@ static struct pll_clk mmpll3_clk_src = {
 		.dbg_name = "mmpll3_clk_src",
 		.rate = 1000000000,
 		.ops = &clk_ops_local_pll,
-		.warned = true,
 		CLK_INIT(mmpll3_clk_src.c),
 	},
 };
@@ -5325,16 +5319,16 @@ static void __init reg_init(void)
 
 	if (!(readl_relaxed(GCC_REG_BASE(GPLL0_STATUS_REG))
 			& gpll0_clk_src.status_mask))
-		configure_pll(&gpll0_config, &gpll0_regs, 1);
+		configure_sr_hpm_lp_pll(&gpll0_config, &gpll0_regs, 1);
 
 	if (!(readl_relaxed(GCC_REG_BASE(GPLL1_STATUS_REG))
 			& gpll1_clk_src.status_mask))
-		configure_pll(&gpll1_config, &gpll1_regs, 1);
+		configure_sr_hpm_lp_pll(&gpll1_config, &gpll1_regs, 1);
 
-	configure_pll(&mmpll0_config, &mmpll0_regs, 1);
-	configure_pll(&mmpll1_config, &mmpll1_regs, 1);
-	configure_pll(&mmpll3_config, &mmpll3_regs, 0);
-	configure_pll(&lpapll0_config, &lpapll0_regs, 1);
+	configure_sr_hpm_lp_pll(&mmpll0_config, &mmpll0_regs, 1);
+	configure_sr_hpm_lp_pll(&mmpll1_config, &mmpll1_regs, 1);
+	configure_sr_hpm_lp_pll(&mmpll3_config, &mmpll3_regs, 0);
+	configure_sr_hpm_lp_pll(&lpapll0_config, &lpapll0_regs, 1);
 
 	/* Enable GPLL0's aux outputs. */
 	regval = readl_relaxed(GCC_REG_BASE(GPLL0_USER_CTL_REG));
@@ -5492,7 +5486,7 @@ static void __init msm8974_clock_pre_init(void)
 	if (!virt_bases[APCS_BASE])
 		panic("clock-8974: Unable to ioremap APCS_GCC_CC memory!");
 
-	clk_ops_local_pll.enable = msm8974_pll_clk_enable;
+	clk_ops_local_pll.enable = sr_hpm_lp_pll_clk_enable;
 
 	vdd_dig_reg = rpm_regulator_get(NULL, "vdd_dig");
 	if (IS_ERR(vdd_dig_reg))
