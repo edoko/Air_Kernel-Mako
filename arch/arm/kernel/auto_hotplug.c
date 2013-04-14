@@ -67,14 +67,14 @@
  * DISABLE is the load at which a CPU is disabled
  * These two are scaled based on num_online_cpus()
  */
-#define ENABLE_ALL_LOAD_THRESHOLD	(120 * CPUS_AVAILABLE)
+#define ENABLE_ALL_LOAD_THRESHOLD	(110 * CPUS_AVAILABLE)
 #define ENABLE_LOAD_THRESHOLD		200
-#define DISABLE_LOAD_THRESHOLD		90
+#define DISABLE_LOAD_THRESHOLD		95
 
 /* Control flags */
 unsigned char flags;
 #define HOTPLUG_DISABLED	(1 << 0)
-#define HOTPLUG_PAUSED		(1 << 1)
+#define HOTPLUG_PAUSED	(1 << 1)
 #define BOOSTPULSE_ACTIVE	(1 << 2)
 #define EARLYSUSPEND_ACTIVE	(1 << 3)
 
