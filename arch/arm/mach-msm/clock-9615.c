@@ -272,6 +272,7 @@ static struct pll_vote_clk pll0_clk = {
 		.rate = 276000000,
 		.ops = &clk_ops_pll_acpu_vote,
 		CLK_INIT(pll0_clk.c),
+		.warned = true,
 	},
 };
 
@@ -287,6 +288,7 @@ static struct pll_vote_clk pll0_activeonly_clk = {
 		.rate = 276000000,
 		.ops = &clk_ops_pll_acpu_vote,
 		CLK_INIT(pll0_activeonly_clk.c),
+		.warned = true,
 	},
 };
 
@@ -301,6 +303,7 @@ static struct pll_vote_clk pll4_clk = {
 		.rate = 393216000,
 		.ops = &clk_ops_pll_vote,
 		CLK_INIT(pll4_clk.c),
+		.warned = true,
 	},
 };
 
@@ -319,6 +322,7 @@ static struct pll_vote_clk pll8_clk = {
 		.rate = 384000000,
 		.ops = &clk_ops_pll_acpu_vote,
 		CLK_INIT(pll8_clk.c),
+		.warned = true,
 	},
 };
 
@@ -334,6 +338,7 @@ static struct pll_vote_clk pll8_activeonly_clk = {
 		.rate = 384000000,
 		.ops = &clk_ops_pll_acpu_vote,
 		CLK_INIT(pll8_activeonly_clk.c),
+		.warned = true,
 	},
 };
 
@@ -344,6 +349,7 @@ static struct pll_clk pll9_activeonly_clk = {
 		.rate = 440000000,
 		.ops = &clk_ops_local_pll,
 		CLK_INIT(pll9_activeonly_clk.c),
+		.warned = true,
 	},
 };
 
@@ -358,6 +364,7 @@ static struct pll_vote_clk pll14_clk = {
 		.rate = 480000000,
 		.ops = &clk_ops_pll_vote,
 		CLK_INIT(pll14_clk.c),
+		.warned = true,
 	},
 };
 

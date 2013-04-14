@@ -488,6 +488,7 @@ static struct pll_clk pll2_clk = {
 		.rate = 800000000,
 		.ops = &clk_ops_local_pll,
 		CLK_INIT(pll2_clk.c),
+		.warned = true,
 	},
 };
 
@@ -501,6 +502,7 @@ static struct pll_clk pll3_clk = {
 		.vdd_class = &vdd_sr2_hdmi_pll,
 		.fmax[VDD_SR2_HDMI_PLL_ON] = ULONG_MAX,
 		CLK_INIT(pll3_clk.c),
+		.warned = true,
 	},
 };
 
@@ -515,6 +517,7 @@ static struct pll_vote_clk pll4_clk = {
 		.rate = 393216000,
 		.ops = &clk_ops_pll_vote,
 		CLK_INIT(pll4_clk.c),
+		.warned = true,
 	},
 };
 
@@ -529,6 +532,7 @@ static struct pll_vote_clk pll8_clk = {
 		.rate = 384000000,
 		.ops = &clk_ops_pll_vote,
 		CLK_INIT(pll8_clk.c),
+		.warned = true,
 	},
 };
 
@@ -543,6 +547,7 @@ static struct pll_vote_clk pll14_clk = {
 		.rate = 480000000,
 		.ops = &clk_ops_pll_vote,
 		CLK_INIT(pll14_clk.c),
+		.warned = true,
 	},
 };
 
@@ -554,6 +559,7 @@ static struct pll_clk pll15_clk = {
 		.rate = 975000000,
 		.ops = &clk_ops_local_pll,
 		CLK_INIT(pll15_clk.c),
+		.warned = true,
 	},
 };
 
@@ -2683,6 +2689,7 @@ static struct rcg_clk csi0_src_clk = {
 		.ops = &clk_ops_rcg,
 		VDD_DIG_FMAX_MAP2(LOW, 86000000, NOMINAL, 178000000),
 		CLK_INIT(csi0_src_clk.c),
+		.warned = true,
 	},
 };
 
@@ -2700,6 +2707,7 @@ static struct branch_clk csi0_clk = {
 		.dbg_name = "csi0_clk",
 		.ops = &clk_ops_branch,
 		CLK_INIT(csi0_clk.c),
+		.warned = true,
 	},
 };
 
@@ -2739,6 +2747,7 @@ static struct rcg_clk csi1_src_clk = {
 		.ops = &clk_ops_rcg,
 		VDD_DIG_FMAX_MAP2(LOW, 86000000, NOMINAL, 178000000),
 		CLK_INIT(csi1_src_clk.c),
+		.warned = true,
 	},
 };
 
@@ -2756,6 +2765,7 @@ static struct branch_clk csi1_clk = {
 		.dbg_name = "csi1_clk",
 		.ops = &clk_ops_branch,
 		CLK_INIT(csi1_clk.c),
+		.warned = true,
 	},
 };
 
@@ -2795,6 +2805,7 @@ static struct rcg_clk csi2_src_clk = {
 		.ops = &clk_ops_rcg,
 		VDD_DIG_FMAX_MAP2(LOW, 86000000, NOMINAL, 178000000),
 		CLK_INIT(csi2_src_clk.c),
+		.warned = true,
 	},
 };
 
@@ -2812,6 +2823,7 @@ static struct branch_clk csi2_clk = {
 		.dbg_name = "csi2_clk",
 		.ops = &clk_ops_branch,
 		CLK_INIT(csi2_clk.c),
+		.warned = true,
 	},
 };
 
