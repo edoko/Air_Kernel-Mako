@@ -160,7 +160,7 @@ struct hrtimer_clock_base *lock_hrtimer_base(const struct hrtimer *timer,
 static int hrtimer_get_target(int this_cpu, int pinned)
 {
 #ifdef CONFIG_NO_HZ
-	if (!pinned && get_sysctl_timer_migration() && idle_cpu(this_cpu))
+	if (!pinned && get_sysctl_timer_migration())
 		return get_nohz_timer_target();
 #endif
 	return this_cpu;
@@ -224,10 +224,13 @@ again:
 		raw_spin_unlock(&base->cpu_base->lock);
 		raw_spin_lock(&new_base->cpu_base->lock);
 
-		if (cpu != this_cpu && hrtimer_check_target(timer, new_base)) {
-			cpu = this_cpu;
+		this_cpu = smp_processor_id();
+
+		if (cpu != this_cpu && (hrtimer_check_target(timer, new_base)
+			|| !cpu_online(cpu))) {
 			raw_spin_unlock(&new_base->cpu_base->lock);
 			raw_spin_lock(&base->cpu_base->lock);
+			cpu = smp_processor_id();
 			timer->base = base;
 			goto again;
 		}
