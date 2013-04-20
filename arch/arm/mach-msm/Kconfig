@@ -2553,4 +2553,9 @@ config FORCE_FAST_CHARGE
 		A simple sysfs interface to force adapters that
 		are detected as USB to charge as AC.
 
+config MSM_CPU_UNDER_AND_OVER_CLOCK
+	bool "Under / Over Clock"
+	default y
+	help
+
 endif
