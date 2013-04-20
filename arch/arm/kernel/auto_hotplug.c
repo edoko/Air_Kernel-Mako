@@ -57,7 +57,7 @@
 /*
  * MIN_SAMPLING_RATE is scaled based on num_online_cpus()
  */
-#define MIN_SAMPLING_RATE	20
+#define MIN_SAMPLING_RATE	msecs_to_jiffies(20)
 
 /*
  * Load defines:
@@ -92,12 +92,10 @@ static unsigned int index;
 static unsigned int debug = 0; // default: false
 static unsigned int enable_load_threshold = ENABLE_LOAD_THRESHOLD;
 static unsigned int disable_load_threshold = DISABLE_LOAD_THRESHOLD;
-static unsigned int min_sampling_rate = MIN_SAMPLING_RATE;
 
 module_param(debug, int, 0775);
 module_param(enable_load_threshold, int, 0775);
 module_param(disable_load_threshold, int, 0775);
-module_param(min_sampling_rate, int, 0775);
 
 static unsigned int min_online_cpus = 1;
 
@@ -134,7 +132,7 @@ module_param_cb(min_online_cpus, &min_online_cpus_ops, &min_online_cpus, 0755);
 
 static void hotplug_decision_work_fn(struct work_struct *work)
 {
-	unsigned int running, disable_load, sampling_rate, enable_load, avg_running, min_sampling_rate_jiffies = 0;
+	unsigned int running, disable_load, sampling_rate, enable_load, avg_running = 0;
 	unsigned int online_cpus, available_cpus, i, j;
 	unsigned int k;
 
@@ -142,8 +140,6 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 	available_cpus = CPUS_AVAILABLE;
 	disable_load = disable_load_threshold * online_cpus;
 	enable_load = enable_load_threshold * online_cpus;
-	min_sampling_rate_jiffies = msecs_to_jiffies(min_sampling_rate);
-
 	/*
 	 * Multiply nr_running() by 100 so we don't have to
 	 * use fp division to get the average.
@@ -213,7 +209,7 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 			schedule_work(&hotplug_online_all_work);
 			return;
 		} else if (flags & HOTPLUG_PAUSED) {
-			schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate_jiffies);
+			schedule_delayed_work_on(0, &hotplug_decision_work, MIN_SAMPLING_RATE);
 			return;
 		} else if ((avg_running >= enable_load) && (online_cpus < available_cpus)) {
 			if (debug) {
@@ -244,7 +240,7 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 	/*
 	 * Reduce the sampling rate dynamically based on online cpus.
 	 */
-	sampling_rate = min_sampling_rate_jiffies * (online_cpus * online_cpus);
+	sampling_rate = MIN_SAMPLING_RATE * (online_cpus * online_cpus);
 	if (debug) {
 	pr_info("sampling_rate is: %d\n", jiffies_to_msecs(sampling_rate));
 	}
@@ -267,7 +263,7 @@ static void hotplug_online_all_work_fn(struct work_struct *work)
 	 * Pause for 2 seconds before even considering offlining a CPU
 	 */
 	schedule_delayed_work(&hotplug_unpause_work, HZ * 2);
-	schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
+	schedule_delayed_work_on(0, &hotplug_decision_work, MIN_SAMPLING_RATE);
 }
 
 static void hotplug_offline_all_work_fn(struct work_struct *work)
@@ -298,7 +294,7 @@ static void hotplug_online_single_work_fn(struct work_struct *work)
 			}
 		}
 	}
-	schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
+	schedule_delayed_work_on(0, &hotplug_decision_work, MIN_SAMPLING_RATE);
 }
 
 static void hotplug_offline_work_fn(struct work_struct *work)
@@ -313,7 +309,7 @@ static void hotplug_offline_work_fn(struct work_struct *work)
 			break;
 		}
 	}
-	schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
+	schedule_delayed_work_on(0, &hotplug_decision_work, MIN_SAMPLING_RATE);
 }
 
 static void hotplug_unpause_work_fn(struct work_struct *work)
@@ -373,7 +369,7 @@ inline void hotplug_boostpulse(void)
 				cancel_delayed_work(&hotplug_offline_work);
 				flags |= HOTPLUG_PAUSED;
 				schedule_delayed_work(&hotplug_unpause_work, HZ * 2);
-				schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
+				schedule_delayed_work_on(0, &hotplug_decision_work, MIN_SAMPLING_RATE);
 			}
 		}
 	}
