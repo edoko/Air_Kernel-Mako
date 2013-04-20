@@ -133,13 +133,13 @@ static int max_online_cpus_get(char *buffer, const struct kernel_param *kp)
 
 static struct kernel_param_ops min_online_cpus_ops = 
 {
-    .set = min_online_cpus_fn_set,
-    .get = min_online_cpus_fn_get,
+    .set = min_online_cpus_set,
+    .get = min_online_cpus_get,
 };
 
 static struct kernel_param_ops max_online_cpus_ops = {
-    .set = max_online_cpus_fn_set,
-    .get = max_online_cpus_fn_get,
+    .set = max_online_cpus_set,
+    .get = max_online_cpus_get,
 };
 
 module_param_cb(min_online_cpus, &min_online_cpus_ops, &min_online_cpus, 0755);
@@ -374,7 +374,7 @@ inline void hotplug_boostpulse(void)
 		 * Either way, we don't allow any cpu_down()
 		 * whilst the user is interacting with the device.
 		 */
-		if (likely(online_cpus() < 2)) {
+		if (likely(online_cpus < 2)) {
 			cancel_delayed_work_sync(&hotplug_offline_work);
 			flags |= HOTPLUG_PAUSED;
 			schedule_work(&hotplug_online_single_work);
