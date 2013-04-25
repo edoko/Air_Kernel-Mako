@@ -529,11 +529,7 @@ static struct pll_vote_clk pll8_clk = {
 	.parent = &pxo_clk.c,
 	.c = {
 		.dbg_name = "pll8_clk",
-#ifdef CONFIG_MSM_CPU_UNDER_AND_OVER_CLOCK
 		.rate = 286000000,
-#else
-		.rate = 384000000,
-#endif
 		.ops = &clk_ops_pll_vote,
 		CLK_INIT(pll8_clk.c),
 		.warned = true,
