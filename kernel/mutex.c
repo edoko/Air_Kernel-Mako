@@ -113,7 +113,7 @@ EXPORT_SYMBOL(mutex_lock);
  * time spent in this lock function.
  */
 struct mspin_node {
-+	struct mspin_node *next ;
+	struct mspin_node *next ;
 	int		  locked;	/* 1 if lock acquired */
 };
 #define	MLOCK(mutex)	((struct mspin_node **)&((mutex)->spin_mlock))
