@@ -28,10 +28,8 @@
 #include "mipi_lgit.h"
 #include "mdp4.h"
 
+//the idea is to have this exported to userspace in the future
 #define SUSPEND_FREQ 702000
-
-static unsigned int suspend_freq = SUSPEND_FREQ;
-module_param(suspend_freq, int, 0644);
 
 static struct msm_panel_common_pdata *mipi_lgit_pdata;
 
@@ -396,8 +394,8 @@ static void cpulimit_early_suspend(struct early_suspend *handler)
 	int cpu;
 
 	for_each_possible_cpu(cpu) {
-		msm_cpufreq_set_freq_limits(cpu, MSM_CPUFREQ_NO_LIMIT, suspend_freq);
-      		pr_info("Cpulimit: Early suspend - limit max frequency to: %d\n", suspend_freq);
+		msm_cpufreq_set_freq_limits(cpu, MSM_CPUFREQ_NO_LIMIT, SUSPEND_FREQ);
+      		pr_info("Cpulimit: Early suspend - limit max frequency to: %d\n", SUSPEND_FREQ);
     	}
 	return;
 }
