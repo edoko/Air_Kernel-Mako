@@ -258,7 +258,7 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 	/*
 	 * Reduce the sampling rate dynamically based on online cpus.
 	 */
-	sampling_rate = MIN_SAMPLING_RATE * online_cpus ;
+	sampling_rate = MIN_SAMPLING_RATE * (online_cpus * online_cpus);
 #if DEBUG
 	pr_info("sampling_rate is: %d\n", jiffies_to_msecs(sampling_rate));
 #endif
