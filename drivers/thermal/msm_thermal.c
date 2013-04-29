@@ -56,6 +56,12 @@ static void check_temp(struct work_struct *work)
 	tsens_dev.sensor_num = msm_thermal_info.sensor_id;
 	tsens_get_temp(&tsens_dev, &temp);
 
+	//device is really hot, it needs severe throttling even if it means a lag fest. Also poll faster        
+	if (temp >= (temp_threshold + 10)) {
+		max_freq = 702000;
+		polling = HZ/8;
+	}
+
 	//temperature is high, lets throttle even more and poll faster (every .25s)
 	else if (temp >= temp_threshold) {
 		max_freq = 1026000;
