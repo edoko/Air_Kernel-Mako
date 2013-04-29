@@ -103,6 +103,7 @@ void __sched mutex_lock(struct mutex *lock)
 EXPORT_SYMBOL(mutex_lock);
 #endif
 
+<<<<<<< HEAD
 #ifdef CONFIG_MUTEX_SPIN_ON_OWNER
 /*
  * In order to avoid a stampede of mutex spinners from acquiring the mutex
@@ -221,6 +222,8 @@ static inline int mutex_can_spin_on_owner(struct mutex *lock)
 }
 #endif
 
+=======
+>>>>>>> parent of 3c5ecb5... mutex: Move mutex spinning code from sched/core.c back to mutex.c
 static __used noinline void __sched __mutex_unlock_slowpath(atomic_t *lock_count);
 
 /**
