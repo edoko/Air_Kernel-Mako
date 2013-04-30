@@ -947,6 +947,10 @@ config CC_OPTIMIZE_FOR_SIZE
 
 	  If unsure, say Y.
 
+config CC_OPTIMIZE_O3
+	bool "Optimize O3"
+	help
+
 config SYSCTL
 	bool
 
