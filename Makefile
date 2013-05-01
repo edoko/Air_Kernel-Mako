@@ -358,8 +358,8 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 CFLAGS_MODULE   =
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
-CFLAGS_KERNEL	= -O2 -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -ftree-vectorize -pipe
-AFLAGS_KERNEL	= -O2 -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -ftree-vectorize -pipe
+CFLAGS_KERNEL	= -O2 -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=softfp -ftree-vectorize -pipe
+AFLAGS_KERNEL	= -O2 -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=softfp -ftree-vectorize -pipe
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -377,13 +377,13 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 \
+		   -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=softfp \
 		   -ftree-vectorize -pipe
 KBUILD_AFLAGS_KERNEL :=
 ifdef CONFIG_CC_OPTIMIZE_O3
-KBUILD_CFLAGS_KERNEL := -O3 -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -ftree-vectorize -pipe
+KBUILD_CFLAGS_KERNEL := -O3 -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=softfp -ftree-vectorize -pipe
 else
-KBUILD_CFLAGS_KERNEL := -O2 -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -ftree-vectorize -pipe
+KBUILD_CFLAGS_KERNEL := -O2 -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=softfp -ftree-vectorize -pipe
 endif
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
