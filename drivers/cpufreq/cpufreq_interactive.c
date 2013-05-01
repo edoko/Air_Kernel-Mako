@@ -64,7 +64,7 @@ static spinlock_t speedchange_cpumask_lock;
 static struct mutex gov_lock;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
-static unsigned int hispeed_freq;
+static unsigned int hispeed_freq = 1188000;
 
 /* Go to hi speed when CPU load at or above this value. */
 #define DEFAULT_GO_HISPEED_LOAD 95
@@ -111,7 +111,7 @@ static u64 boostpulse_endtime;
  * Max additional time to wait in idle, beyond timer_rate, at speeds above
  * minimum before wakeup to reduce speed, or -1 if unnecessary.
  */
-#define DEFAULT_TIMER_SLACK (4 * DEFAULT_TIMER_RATE)
+#define DEFAULT_TIMER_SLACK (3 * DEFAULT_TIMER_RATE)
 static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
 static bool io_is_busy;
