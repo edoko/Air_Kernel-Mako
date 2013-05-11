@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all
+ * copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+/*
  * Copyright (c) 2012, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
@@ -166,7 +186,7 @@ void sme_SetFTIEs( tHalHandle hHal, tANI_U8 sessionId, tANI_U8 *ft_ies,
             pMac->ft.ftSmeContext.FTState = eFT_AUTH_REQ_READY;
 
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-            smsLog( pMac, LOGE, "ft_ies_length=%d\n", ft_ies_length);
+            smsLog( pMac, LOG1, "ft_ies_length=%d", ft_ies_length);
             /*
             smsLog( pMac, LOGE, "%d: New Auth ft_ies_length=%02x%02x%02x\n", 
                 current->pid, pMac->ft.ftSmeContext.auth_ft_ies[0],
@@ -225,14 +245,8 @@ void sme_SetFTIEs( tHalHandle hHal, tANI_U8 sessionId, tANI_U8 *ft_ies,
                 
             pMac->ft.ftSmeContext.FTState = eFT_SET_KEY_WAIT;
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-            smsLog( pMac, LOGE, "ft_ies_length=%d state=%d\n", ft_ies_length,
+            smsLog( pMac, LOG1, "ft_ies_length=%d state=%d", ft_ies_length,
                 pMac->ft.ftSmeContext.FTState);
-            /*
-            smsLog( pMac, LOGE, "%d: New Auth ft_ies_length=%02x%02x%02x\n", 
-                current->pid, pMac->ft.ftSmeContext.reassoc_ft_ies[0],
-                pMac->ft.ftSmeContext.reassoc_ft_ies[1],
-                pMac->ft.ftSmeContext.reassoc_ft_ies[2]);
-                */
 #endif
             
             break;
@@ -348,15 +362,15 @@ eHalStatus sme_FTUpdateKey( tHalHandle hHal, tCsrRoamSetKey * pFTKeyInfo )
        return eHAL_STATUS_FAILURE;
     }
 
-    if (pFTKeyInfo == NULL) 
+    if (pFTKeyInfo == NULL)
     {
-        smsLog( pMac, LOGE, "%s: pFTKeyInfo is NULL\n", __FUNCTION__);
+        smsLog( pMac, LOGE, "%s: pFTKeyInfo is NULL\n", __func__);
         sme_ReleaseGlobalLock( &pMac->sme );
-        return eHAL_STATUS_FAILURE; 
+        return eHAL_STATUS_FAILURE;
     }
 
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-    smsLog( pMac, LOG1, "sme_FTUpdateKey is received in state %d", 
+    smsLog( pMac, LOG1, "sme_FTUpdateKey is received in state %d",
         pMac->ft.ftSmeContext.FTState);
 #endif
 
@@ -364,12 +378,16 @@ eHalStatus sme_FTUpdateKey( tHalHandle hHal, tCsrRoamSetKey * pFTKeyInfo )
     switch(pMac->ft.ftSmeContext.FTState)
     {
     case eFT_SET_KEY_WAIT:
-       status = sme_FTSendUpdateKeyInd( hHal, pFTKeyInfo );
+       status = eHAL_STATUS_FT_PREAUTH_KEY_WAIT;
        pMac->ft.ftSmeContext.FTState = eFT_START_READY;
+#ifdef WLAN_FEATURE_VOWIFI_11R_DEBUG
+       smsLog( pMac, LOG1, "%s: state changed to %d", __func__,
+               pMac->ft.ftSmeContext.FTState);
+#endif
        break;
           
     default:
-       smsLog( pMac, LOGE, "%s: Unhandled state=%d\n", __FUNCTION__,
+       smsLog( pMac, LOGE, "%s: Unhandled state=%d\n", __func__,
                pMac->ft.ftSmeContext.FTState);
        status = eHAL_STATUS_FAILURE;
        break;

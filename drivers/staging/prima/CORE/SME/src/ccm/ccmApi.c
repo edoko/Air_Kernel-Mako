@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all
+ * copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+/*
  * Copyright (c) 2012, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
@@ -22,9 +42,6 @@
 #include "palTypes.h"
 #include "wniApi.h"     /* WNI_CFG_SET_REQ */
 #include "sirParams.h"  /* tSirMbMsg */
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-#include "halHddApis.h" /* palAllocateMemory */
-#endif
 #include "smsDebug.h"   /* smsLog */
 #include "cfgApi.h"
 #include "ccmApi.h"
@@ -649,9 +666,15 @@ eHalStatus ccmCfgGetInt(tHalHandle hHal, tANI_U32 cfgId, tANI_U32 *pValue)
 eHalStatus ccmCfgGetStr(tHalHandle hHal, tANI_U32 cfgId, tANI_U8 *pBuf, tANI_U32 *pLength)
 {
     tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
-    tHddHandle hHdd = halHandle2HddHandle(hHal);
+    tHddHandle hHdd;
     eHalStatus status = eHAL_STATUS_SUCCESS ;
-    tCfgReq *req = pMac->ccm.comp[cfgId] ;
+    tCfgReq *req;
+
+    if (!pMac)
+        return eHAL_STATUS_FAILURE;
+
+    hHdd = halHandle2HddHandle(hHal);
+    req = pMac->ccm.comp[cfgId] ;
 
     if (req && req->state == eCCM_REQ_DONE && (tANI_U32)req->length <= *pLength)
     {
@@ -894,12 +917,6 @@ typedef struct hdd_netdev_priv_s
     /* Stats */
     struct net_device_stats stats;
     int curr_acc_cat;
-#ifdef LX5280
-    unsigned short rtl_pvid; //VLAN id this Interface belongs to
-    int rtl_extPortNum; //ext port used in RTL865x driver
-    int rtl_linkId[16];//link ID of each interface for RTL865x driver
-    int rtl_wdsActive;
-#endif
     tANI_U16 lport; /* switch logical port */
 
     /* management and control */
@@ -1045,9 +1062,6 @@ typedef struct hdd_netdev_priv_s
      */
     t_mac_block_table * mac_block_table;
     struct sk_buff_head mac_list;
-#if  defined(ASICDXE_PROFILE) && defined(LX5280)
-    tANI_U32 num_of_reg_switches;
-#endif
     tANI_U32 magic_tail;
 } hdd_netdev_priv_t;
 

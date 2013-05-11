@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all
+ * copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+/*
  * Copyright (c) 2012, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
@@ -18,7 +38,6 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-
 /*============================================================================
 Copyright (c) 2007 QUALCOMM Incorporated.
 All Rights Reserved.
@@ -55,10 +74,6 @@ logDump.c
 #define MAX_LOGDUMP_SIZE    ((4*1024) - MAX_OVERFLOW_MSG)
 #endif
 
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-#include "halDebug.h"
-#include "halInterrupts.h"
-#endif
 #if defined (ANI_OS_TYPE_LINUX)
 
 #include <sysDebug.h>
@@ -74,9 +89,6 @@ logDump.c
 #endif
 
 #include "pmmApi.h"
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-#include "halInternal.h"
-#endif
 #include "csrApi.h"
 
 #elif defined(ANI_OS_TYPE_OSX)
@@ -111,9 +123,6 @@ logDump.c
 #include <utilsApi.h>
 
 #include <limApi.h>
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-#include <halCommonApi.h>
-#endif
 #include <cfgApi.h>
 #include <utilsGlobal.h>
 #include <dphGlobal.h>
@@ -123,19 +132,8 @@ logDump.c
 
 #include "pmmApi.h"
 #include "limSerDesUtils.h"
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-#include "halLogDump.h"
-//#include "testHalMsgApi.h"
-#include "halMailbox.h"
-#include "halRxp.h"
-#include "halMTU.h"
-#include "halPhyApi.h"
-#endif
 #include "limAssocUtils.h"
 #include "limSendMessages.h"
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-#include "halUtils.h"
-#endif
 #include "limSecurityUtils.h"
 //#include "halRadar.h"
 #include "logDump.h"
@@ -145,7 +143,7 @@ logDump.c
 #define HAL_LOG_DUMP_CMD_START 0
 #define HAL_LOG_DUMP_CMD_END 299
 
-static int debug = 0;
+static int debug;
 
     void
 logPrintf(tpAniSirGlobal pMac, tANI_U32 cmd, tANI_U32 arg1, tANI_U32 arg2, tANI_U32 arg3, tANI_U32 arg4)

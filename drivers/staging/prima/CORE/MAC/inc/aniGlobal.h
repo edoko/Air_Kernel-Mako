@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all
+ * copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+/*
  * Copyright (c) 2012, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
@@ -18,7 +38,6 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-
 /*
  * Airgo Networks, Inc proprietary. All rights reserved
  * aniGlobal.h: MAC Modules Adapter Definitions.
@@ -57,16 +76,8 @@ typedef struct sAniSirGlobal *tpAniSirGlobal;
 #include "utilsGlobal.h"
 #include "sirApi.h"
 
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-#include "halGlobal.h"
-#include "halDataStruct.h"
-#include "phyGlobal.h"
-#include "pttModule.h"
-#endif
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
 #include "wlan_qct_hal.h"
-#endif 
 
 #ifdef ANI_PRODUCT_TYPE_CLIENT
 #include "pmc.h"
@@ -110,11 +121,9 @@ typedef struct sAniSirGlobal *tpAniSirGlobal;
 // New HAL API interface defs.
 #include "logDump.h"
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
 //Check if this definition can actually move here from halInternal.h even for Volans. In that case
 //this featurization can be removed.
 #define PMAC_STRUCT( _hHal )  (  (tpAniSirGlobal)_hHal )
-#endif
 
 #define ANI_DRIVER_TYPE(pMac)     (((tpAniSirGlobal)(pMac))->gDriverType)
 // -------------------------------------------------------------------
@@ -129,8 +138,8 @@ typedef struct sAniSirGlobal *tpAniSirGlobal;
 
 // cap should be one of HCF/WME/WSM
 #define LIM_BSS_CAPS_GET(cap, val) (((val) & (LIM_BSS_CAPS_ ## cap)) >> LIM_BSS_CAPS_OFFSET_ ## cap)
-#define LIM_BSS_CAPS_SET(cap, val) (val) |= (LIM_BSS_CAPS_ ## cap )
-#define LIM_BSS_CAPS_CLR(cap, val) (val) &= (~ (LIM_BSS_CAPS_ ## cap))
+#define LIM_BSS_CAPS_SET(cap, val) ((val) |= (LIM_BSS_CAPS_ ## cap ))
+#define LIM_BSS_CAPS_CLR(cap, val) ((val) &= (~ (LIM_BSS_CAPS_ ## cap)))
 
 // 40 beacons per heart beat interval is the default + 1 to count the rest
 #define MAX_NO_BEACONS_PER_HEART_BEAT_INTERVAL 41
@@ -146,6 +155,8 @@ typedef struct sAniSirGlobal *tpAniSirGlobal;
 #define MAX_NO_OF_P2P_SESSIONS  5
 #endif //WLAN_FEATURE_CONCURRENT_P2P
 #endif //WLAN_FEATURE_P2P
+
+#define SPACE_ASCII_VALUE  32
 
 // -------------------------------------------------------------------
 // Change channel generic scheme
@@ -243,13 +254,29 @@ typedef struct sLimTimers
 #ifdef WLAN_FEATURE_P2P
     TX_TIMER           gLimRemainOnChannelTimer;
 #endif
+#ifdef FEATURE_WLAN_TDLS_INTERNAL
+    TX_TIMER           gLimTdlsDisRspWaitTimer;
+    TX_TIMER           gLimTdlsLinkSetupRspTimeouTimer;
+    TX_TIMER           gLimTdlsLinkSetupCnfTimeoutTimer;
+#endif
 
+    TX_TIMER           gLimPeriodicJoinProbeReqTimer;
+    TX_TIMER           gLimDisassocAckTimer;
+    TX_TIMER           gLimDeauthAckTimer;
+#ifdef WLAN_FEATURE_P2P
+    // This timer is started when single shot NOA insert msg is sent to FW for scan in P2P GO mode
+    TX_TIMER           gLimP2pSingleShotNoaInsertTimer;
+#endif
 //********************TIMER SECTION ENDS**************************************************
 // ALL THE FIELDS BELOW THIS CAN BE ZEROED OUT in limInitialize
 //****************************************************************************************
 
 }tLimTimers;
 
+typedef struct {
+    void *pMlmDisassocReq;
+    void *pMlmDeauthReq;
+}tLimDisassocDeauthCnfReq;
 
 typedef struct sAniSirLim
 {
@@ -297,6 +324,9 @@ typedef struct sAniSirLim
     tANI_U32   gLimCurrentScanChannelId;
 
     // Hold onto SCAN criteria
+#ifdef WLAN_FEATURE_P2P
+    tSirSmeScanReq *gpLimSmeScanReq; // this one is used in P2P GO case when scan needs to be actually done a few BIs later after publishing NOA
+#endif
     tLimMlmScanReq *gpLimMlmScanReq;
 
     /// This indicates total length of 'matched' scan results
@@ -453,7 +483,6 @@ typedef struct sAniSirLim
     tANI_U32    gLimNumDeferredMsgs;
 
     /// Variable to keep track of number of currently associated STAs
-    tANI_U16  gLimNumOfCurrentSTAs;
     tANI_U16  gLimNumOfAniSTAs;      // count of ANI peers
     tANI_U16  gLimAssocStaLimit;
 
@@ -676,6 +705,8 @@ typedef struct sAniSirLim
 
     // admission control policy information
     tLimAdmitPolicyInfo admitPolicyInfo;
+    vos_lock_t lkPeGlobalLock;
+    tANI_U8 disableLDPCWithTxbfAP;
 
 
 
@@ -689,15 +720,6 @@ typedef struct sAniSirLim
     // Place holder for ReassocReq message
     // received by SME state machine
     //tpSirSmeReassocReq    gpLimReassocReq;  sep23 review
-
-    /**
-     * Following is the place holder for free AID pool.
-     * A non-zero value indicates that AID is available
-     * for assignment.
-     */
-    tANI_U8    *gpLimAIDpool;
-    tANI_U8    freeAidHead;
-    tANI_U8    freeAidTail;
 
     // Current Authentication type used at STA
     //tAniAuthType        gLimCurrentAuthType;
@@ -887,6 +909,27 @@ typedef struct sAniSirLim
 
     ////////////////////////////////  HT RELATED           //////////////////////////////////////////
 
+#ifdef FEATURE_WLAN_TDLS_INTERNAL
+    ////////////////////////////////  TDLS RELATED         //////////////////////////////////////////
+    
+    tSirTdlsDisReq gLimTdlsDisReq ; 
+    //tLimDisResultList *gTdlsDisResultList ;
+    tLimDisResultList *gLimTdlsDisResultList ;
+    tANI_U8 gLimTdlsDisStaCount ;
+    tANI_U8 gAddStaDisRspWait ;
+
+    tLimTdlsLinkSetupInfo  gLimTdlsLinkSetupInfo;
+    
+    /* to track if direct link is b/g/n, this can be independent of AP link */
+#ifdef FEATURE_WLAN_TDLS_NEGATIVE
+    tANI_U32 gLimTdlsNegativeBehavior;  
+#endif
+#endif
+#ifdef FEATURE_WLAN_TDLS
+    tANI_U8 gLimAddStaTdls ;
+    tANI_U8 gLimTdlsLinkMode ;
+    ////////////////////////////////  TDLS RELATED         //////////////////////////////////////////
+#endif
 
     // wsc info required to form the wsc IE
     tLimWscIeInfo wscIeInfo;
@@ -906,14 +949,15 @@ tLimMlmOemDataRsp       *gpLimMlmOemDataRsp;
 #ifdef WLAN_FEATURE_P2P
     tSirRemainOnChnReq  *gpLimRemainOnChanReq; //hold remain on chan request in this buf
     vos_list_t  gLimMgmtFrameRegistratinQueue;
-    tANI_U32    actionFrameSessionId;
 #endif
+    tANI_U32    mgmtFrameSessionId;
     tSirBackgroundScanMode gLimBackgroundScanMode;
-#ifdef WLAN_FEATURE_11AC
-    tANI_U8    vhtCapabilityPresentInBeacon;
-    tANI_U8    apCenterChan;
-    tANI_U8    apChanWidth;
+
+#if  defined (WLAN_FEATURE_VOWIFI_11R) || defined (FEATURE_WLAN_CCX) || defined(FEATURE_WLAN_LFR)
+    tpPESession  pSessionEntry;
+    tANI_U8 reAssocRetryAttempt;
 #endif
+    tLimDisassocDeauthCnfReq limDisassocDeauthCnfReq;
 } tAniSirLim, *tpAniSirLim;
 
 #ifdef WLAN_FEATURE_P2P
@@ -943,7 +987,6 @@ typedef struct sFTContext
 } tftContext, *tpFTContext;
 #endif
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
 //Check if this definition can actually move here even for Volans. In that case
 //this featurization can be removed.
 /** ------------------------------------------------------------------------- * 
@@ -993,7 +1036,6 @@ typedef struct sHalMacStartParameters
     tDriverType  driverType;
 
 } tHalMacStartParameters;
-#endif 
 
 // -------------------------------------------------------------------
 /// MAC Sirius parameter structure
@@ -1017,20 +1059,12 @@ typedef struct sAniSirGlobal
     tSirMbMsg*   pResetMsg;
     tAniSirCfg   cfg;
     tAniSirLim   lim;
-    //tAniSirDph   dph;
     tAniSirPmm   pmm;
     tAniSirSch   sch;
     tAniSirSys   sys;
     tAniSirUtils utils;
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-    tAniSirHal   hal;
-    tAniSirPhy   hphy;
-#endif 
 
 #ifndef WLAN_FTM_STUB 
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-    tPttModuleVariables ptt;
-#endif
 #endif
 
     tAniSirTxWrapper txWrapper;
@@ -1048,7 +1082,9 @@ typedef struct sAniSirGlobal
 #ifdef FEATURE_OEM_DATA_SUPPORT
     tOemDataStruct oemData;
 #endif
-
+#ifdef FEATURE_WLAN_TDLS_INTERNAL
+    tCsrTdlsCtxStruct tdlsCtx ;
+#endif
 #ifdef ANI_PRODUCT_TYPE_CLIENT
     tPmcInfo     pmc;
     tSmeBtcInfo  btc;
@@ -1081,7 +1117,16 @@ typedef struct sAniSirGlobal
     
 } tAniSirGlobal;
 
+#ifdef FEATURE_WLAN_TDLS
 
+#define RFC1042_HDR_LENGTH      (6)
+#define GET_BE16(x)             ((tANI_U16) (((x)[0] << 8) | (x)[1]))
+#define ETH_TYPE_89_0d          (0x890d)
+#define ETH_TYPE_LEN            (2)
+#define PAYLOAD_TYPE_TDLS_SIZE  (1)
+#define PAYLOAD_TYPE_TDLS       (2)
+
+#endif
 
 #endif /* _ANIGLOBAL_H */
 

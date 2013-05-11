@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all
+ * copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+/*
  * Copyright (c) 2012, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
@@ -22,22 +42,19 @@
 /*
  * Airgo Networks, Inc proprietary. All rights reserved.
  * logApi.cc - Handles log messages for all the modules.
- * Author:        Kevin Nguyen    
+ * Author:        Kevin Nguyen
  * Date:          02/27/02
  * History:-
  * 02/11/02       Created.
  * 03/12/02       Rearrange logDebug parameter list and add more params.
  * --------------------------------------------------------------------
- * 
+ *
  */
 #define WNI_PRINT_DEBUG
 
 #include <sirCommon.h>
 #include <sirDebug.h>
 #include <utilsApi.h>
-#if defined(FEATURE_WLAN_NON_INTEGRATED_SOC)
-#include <halCommonApi.h>
-#endif
 #include <wlan_qct_wda.h>
 
 #include <stdarg.h>
@@ -53,7 +70,7 @@
 #endif
 
 
-//This is not right here. Need to find a better place. 
+//This is not right here. Need to find a better place.
 //_vsnprintf is a function in Windows
 //Temporary workaround.
 #ifndef ANI_OS_TYPE_WINDOWS
@@ -72,11 +89,11 @@
     VOS_TRACE(VOS_MODULE_ID_SYS, VOS_TRACE_LEVEL_INFO,   \
               _LogBuffer);                               \
   }
-  
+
 
 // ---------------------------------------------------------------------
 /**
- * logInit() 
+ * logInit()
  *
  * FUNCTION:
  * This function is called to prepare the logging utility.
@@ -91,7 +108,7 @@
  * @param tpAniSirGlobal Sirius software parameter strucutre pointer
  * @return None
  */
-tSirRetStatus 
+tSirRetStatus
 logInit(tpAniSirGlobal pMac)
 {
     tANI_U32    i;
@@ -103,11 +120,7 @@ logInit(tpAniSirGlobal pMac)
 #ifdef SIR_DEBUG
         pMac->utils.gLogEvtLevel[i] = pMac->utils.gLogDbgLevel[i] = LOG1;
 #else
-#ifdef LX5280
-        pMac->utils.gLogEvtLevel[i] = pMac->utils.gLogDbgLevel[i] = LOGE;
-#else
         pMac->utils.gLogEvtLevel[i] = pMac->utils.gLogDbgLevel[i] = LOGW;
-#endif
 #endif
     }
     return eSIR_SUCCESS;
@@ -121,7 +134,7 @@ logDeinit(tpAniSirGlobal pMac)
 }
 
 /**
- * logDbg() 
+ * logDbg()
  *
  *FUNCTION:
  * This function is called to log a debug message.
@@ -164,15 +177,15 @@ void logDbg(tpAniSirGlobal pMac, tANI_U8 modId, tANI_U32 debugLevel, const char 
         va_start( marker, pStr );     /* Initialize variable arguments. */
 
         logDebug(pMac, modId, debugLevel, pStr, marker);
-        
+
         va_end( marker );              /* Reset variable arguments.      */
-    }      
+    }
 #endif
 }
 
 #ifdef VOSS_ENABLED
 static inline VOS_TRACE_LEVEL getVosDebugLevel(tANI_U32 debugLevel)
-{   
+{
     switch(debugLevel)
     {
         case LOGP:
@@ -213,7 +226,7 @@ static inline VOS_MODULE_ID getVosModuleId(tANI_U8 modId)
 
         case SIR_SYS_MODULE_ID:
             return VOS_MODULE_ID_SYS;
-    
+
         case SIR_SMS_MODULE_ID:
             return VOS_MODULE_ID_SME;
 

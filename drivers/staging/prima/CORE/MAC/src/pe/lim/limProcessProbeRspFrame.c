@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all
+ * copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+/*
  * Copyright (c) 2012, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
@@ -39,9 +59,6 @@
 #include "wniCfgSta.h"
 #endif
 #include "aniGlobal.h"
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-#include "halCommonApi.h"
-#endif
 #include "schApi.h"
 #include "utilsApi.h"
 #include "limApi.h"
@@ -53,6 +70,19 @@
 #include "limSendMessages.h"
 
 #include "parserApi.h"
+
+tSirRetStatus
+limValidateIEInformationInProbeRspFrame (tANI_U8 *pRxPacketInfo)
+{
+   tSirRetStatus       status = eSIR_SUCCESS;
+
+   if (WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo) < (SIR_MAC_B_PR_SSID_OFFSET + SIR_MAC_MIN_IE_LEN))
+   {
+      status = eSIR_FAILURE;
+   }
+
+   return status;
+}
 
 /**
  * limProcessProbeRspFrame
@@ -118,7 +148,14 @@ limProcessProbeRspFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession 
        palFreeMemory(pMac->hHdd, pProbeRsp);    
        return;
    }
-
+   // Validate IE information before processing Probe Response Frame
+   if (limValidateIEInformationInProbeRspFrame(pRxPacketInfo) != eSIR_SUCCESS)
+   {
+       PELOG1(limLog(pMac, LOG1,
+                 FL("Parse error ProbeResponse, length=%d"), frameLen);)
+       palFreeMemory(pMac->hHdd, pProbeRsp);
+       return;
+   }
 
     /**
      * Expect Probe Response only when
@@ -150,11 +187,11 @@ limProcessProbeRspFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession 
         // Get pointer to Probe Response frame body
         pBody = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
 
-        if (sirConvertProbeFrame2Struct(pMac, pBody, frameLen, pProbeRsp)
-                          ==eSIR_FAILURE)
+        if (sirConvertProbeFrame2Struct(pMac, pBody, frameLen, pProbeRsp) == eSIR_FAILURE ||
+            !pProbeRsp->ssidPresent) // Enforce Mandatory IEs
         {
             PELOG1(limLog(pMac, LOG1,
-               FL("PArse error ProbeResponse, length=%d\n"),
+               FL("Parse error ProbeResponse, length=%d"),
                frameLen);)
             palFreeMemory(pMac->hHdd, pProbeRsp);
             return;
@@ -247,17 +284,6 @@ limProcessProbeRspFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession 
             
             if (psessionEntry->limSystemRole == eLIM_STA_ROLE)
             {
-                if (pProbeRsp->quietIEPresent)
-                {
-                    limUpdateQuietIEFromBeacon(pMac, &(pProbeRsp->quietIE), psessionEntry);
-                }
-                else if ((psessionEntry->gLimSpecMgmt.quietState == eLIM_QUIET_BEGIN) ||
-                     (psessionEntry->gLimSpecMgmt.quietState == eLIM_QUIET_RUNNING))
-                {
-                    PELOG1(limLog(pMac, LOG1, FL("Received a probe rsp without Quiet IE\n"));)
-                    limCancelDot11hQuiet(pMac, psessionEntry);
-                }
-
                 if (pProbeRsp->channelSwitchPresent ||
                     pProbeRsp->propIEinfo.propChannelSwitchPresent)
                 {
@@ -356,7 +382,14 @@ limProcessProbeRspFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo)
         palFreeMemory(pMac->hHdd, pProbeRsp);
         return;
     }
-
+     // Validate IE information before processing Probe Response Frame
+    if (limValidateIEInformationInProbeRspFrame(pRxPacketInfo) != eSIR_SUCCESS)
+    {
+       PELOG1(limLog(pMac, LOG1,FL("Parse error ProbeResponse, length=%d"),
+              frameLen);)
+       palFreeMemory(pMac->hHdd, pProbeRsp);
+       return;
+    }
     /*  Since there is no psessionEntry, PE cannot be in the following states:
      *   - eLIM_MLM_WT_JOIN_BEACON_STATE
      *   - eLIM_MLM_LINK_ESTABLISHED_STATE

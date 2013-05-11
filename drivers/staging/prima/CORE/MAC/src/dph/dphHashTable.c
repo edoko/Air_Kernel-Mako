@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all
+ * copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+/*
  * Copyright (c) 2012, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
@@ -38,13 +58,8 @@
 #include "dphGlobal.h"
 #include "limDebug.h"
 
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-#include "halCommonApi.h"
-#endif
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
 #include "halMsgApi.h" 
-#endif
 
 // ---------------------------------------------------------------------
 /**
@@ -163,12 +178,12 @@ tpDphHashNode dphLookupHashEntry(tpAniSirGlobal pMac, tANI_U8 staAddr[], tANI_U1
  *         NULL if lookup was a failure
  */
 
-tpDphHashNode dphGetHashEntry(tpAniSirGlobal pMac, tANI_U16 assocId, dphHashTableClass* pDphHashTable)
+tpDphHashNode dphGetHashEntry(tpAniSirGlobal pMac, tANI_U16 peerIdx, dphHashTableClass* pDphHashTable)
 {
-    if (assocId < pDphHashTable->size)
+    if (peerIdx < pDphHashTable->size)
     {
-        if (pDphHashTable->pDphNodeArray[assocId].added)
-          return &pDphHashTable->pDphNodeArray[assocId];
+        if (pDphHashTable->pDphNodeArray[peerIdx].added)
+          return &pDphHashTable->pDphNodeArray[peerIdx];
         else
             return NULL;
     }
@@ -278,10 +293,6 @@ tpDphHashNode dphInitStaState(tpAniSirGlobal pMac, tSirMacAddr staAddr,
 
     pStaDs->added = 1;
     pStaDs->encPolicy = HAL_ENC_POLICY_NULL;
-
-#if defined( PLM_WDS)&&defined(LX5280)
-    pStaDs->wdsIndex=pStaDs->wdsPeerBeaconSeen=0;
-#endif
 
 #ifdef WMM_APSD
     pStaDs->stopQueue = 0;
@@ -427,6 +438,7 @@ tSirRetStatus dphDeleteHashEntry(tpAniSirGlobal pMac, tSirMacAddr staAddr, tANI_
     {
       /// Delete the entry after invalidating it
       ptr->valid = 0;
+      memset(ptr->staAddr, 0, sizeof(ptr->staAddr));
       if (prev == 0)
          pDphHashTable->pHashTable[index] = ptr->next;
       else

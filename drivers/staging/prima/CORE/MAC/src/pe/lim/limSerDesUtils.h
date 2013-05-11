@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all
+ * copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+/*
  * Copyright (c) 2012, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
@@ -96,6 +116,7 @@ static inline void limCopyU16(tANI_U8 *ptr, tANI_U16 u16Val)
 #elif ((defined(ANI_OS_TYPE_OSX) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_WINDOWS) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_AMSS) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
+       (defined(ANI_OS_TYPE_QNX) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_ANDROID) && defined(ANI_LITTLE_BYTE_ENDIAN)))
     *ptr++ = (tANI_U8) (u16Val & 0xff);
     *ptr   = (tANI_U8) ((u16Val >> 8) & 0xff);
@@ -112,6 +133,7 @@ static inline tANI_U16 limGetU16(tANI_U8 *ptr)
 #elif ((defined(ANI_OS_TYPE_OSX) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_WINDOWS) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_AMSS) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
+       (defined(ANI_OS_TYPE_QNX) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_ANDROID) && defined(ANI_LITTLE_BYTE_ENDIAN)))
     return (((tANI_U16) (*(ptr+1) << 8)) |
             ((tANI_U16) (*ptr)));
@@ -130,6 +152,7 @@ static inline void limCopyU32(tANI_U8 *ptr, tANI_U32 u32Val)
 #elif ((defined(ANI_OS_TYPE_OSX) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_WINDOWS) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_AMSS) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
+       (defined(ANI_OS_TYPE_QNX) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_ANDROID) && defined(ANI_LITTLE_BYTE_ENDIAN)))
     *ptr++ = (tANI_U8) (u32Val & 0xff);
     *ptr++ = (tANI_U8) ((u32Val >> 8) & 0xff);
@@ -150,6 +173,7 @@ static inline tANI_U32 limGetU32(tANI_U8 *ptr)
 #elif ((defined(ANI_OS_TYPE_OSX) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_WINDOWS) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_AMSS) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
+       (defined(ANI_OS_TYPE_QNX) && defined(ANI_LITTLE_BYTE_ENDIAN)) || \
        (defined(ANI_OS_TYPE_ANDROID) && defined(ANI_LITTLE_BYTE_ENDIAN)))
     return ((*(ptr+3) << 24) |
             (*(ptr+2) << 16) |
