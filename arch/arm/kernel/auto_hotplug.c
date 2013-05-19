@@ -33,6 +33,7 @@
 #include <linux/cpu.h>
 #include <linux/workqueue.h>
 #include <linux/sched.h>
+#include <mach/cpufreq.h>
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
@@ -72,6 +73,8 @@
 #define ENABLE_LOAD_THRESHOLD		190
 #define DISABLE_LOAD_THRESHOLD		95
 
+#define SUSPEND_FREQ	702000
+
 /* Control flags */
 unsigned char flags;
 #define HOTPLUG_DISABLED	(1 << 0)
@@ -92,6 +95,9 @@ static unsigned int index;
 
 static unsigned int min_online_cpus = 1;
 static unsigned int max_online_cpus;
+
+static unsigned int suspend_frequency = SUSPEND_FREQ;
+module_param(suspend_frequency, int, 0755);
 
 static int min_online_cpus_set(const char *arg, const struct kernel_param *kp)
 {
@@ -411,6 +417,9 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 		pr_info("auto_hotplug: Offlining CPUs for early suspend\n");
 		schedule_work_on(0, &hotplug_offline_all_work);
 	}
+
+	msm_cpufreq_set_freq_limits(0, MSM_CPUFREQ_NO_LIMIT, suspend_frequency);
+      	pr_info("Cpulimit: Early suspend - limit max frequency to: %d\n", suspend_frequency);
 }
 
 static void auto_hotplug_late_resume(struct early_suspend *handler)
@@ -420,12 +429,16 @@ static void auto_hotplug_late_resume(struct early_suspend *handler)
 #endif
 	flags &= ~EARLYSUSPEND_ACTIVE;
 
+	msm_cpufreq_set_freq_limits(0, MSM_CPUFREQ_NO_LIMIT, MSM_CPUFREQ_NO_LIMIT);
+      	pr_info("Cpulimit: Late resume - restore max frequency.\n");
+
 	schedule_delayed_work_on(0, &hotplug_decision_work, HZ/2);
 }
 
 static struct early_suspend auto_hotplug_suspend = {
 	.suspend = auto_hotplug_early_suspend,
 	.resume = auto_hotplug_late_resume,
+	.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1,
 };
 #endif /* CONFIG_HAS_EARLYSUSPEND */
 
